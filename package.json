@@ -1,0 +1,41 @@
+{
+  "name": "severproject",
+  "version": "1.0.0",
+  "description": "severProject",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npm run && node sever.js",
+    "dev": "babel src -d  && node sever.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "add": "^2.0.6",
+    "assert": "^1.4.1",
+    "async": "^2.6.0",
+    "async-foreach": "^0.1.3",
+    "axios": "^0.16.2",
+    "bluebird": "^3.5.1",
+    "body-parser": "^1.18.2",
+    "cors": "^2.8.4",
+    "express": "^4.16.2",
+    "fast-csv": "^2.4.1",
+    "firebase": "^4.6.0",
+    "fs": "^0.0.1-security",
+    "geodist": "^0.2.1",
+    "google-maps-direction": "^1.0.0",
+    "http": "0.0.0",
+    "https": "^1.0.0",
+    "mongoose": "^5.0.1",
+    "mongoose-float": "^1.0.2",
+    "mongoose-promised": "^0.1.0",
+    "yarn": "^1.3.2"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-react": "^6.24.1"
+  }
+}
