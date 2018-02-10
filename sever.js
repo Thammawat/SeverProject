@@ -649,12 +649,12 @@ app.use(bodyParser.json())
 app.use(cors())
 app.use(require('./controllers'))
 
-
+var port = process.env.PORT || 3000;
 app.get('/', function (req, res) {
   res.send('Hello World');
 })
 
-app.listen(3000, () => {
+app.listen(port, () => {
   console.log('Started ');
   // axios.get('https://roads.googleapis.com/v1/snapToRoads?path=13.8195814029018,100.558985662449|13.9048351671973,100.526637039089|13.9055414433391,100.52437930514|&interpolate=true&key=AIzaSyAsjL_Kc8Y6zK0pRN2UpdUBhiJGjHMA-aE')
   // .then(data => {
