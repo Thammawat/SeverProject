@@ -27,7 +27,7 @@ var count = 0;
 
 Promise.promisifyAll(mongoose);
 mongoose.Promise = Promise;
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/basedir');
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://admin:Nongbee1407@ds231658.mlab.com:31658/project');
 
 
 
