@@ -199,7 +199,7 @@ async function checkBusData(roadMapBus, busID, speed, busStopSequence, busLat, b
           newBus: true,
         })
       }
-    }, 500);
+    }, 10);
   });
 }
 
@@ -311,7 +311,7 @@ async function checkBusOutofRoad(busroad, busData, roadMapBus, lat, lng, timeSta
           }
         }
       }
-    }, 500);
+    }, 10);
   });
 }
 
@@ -394,7 +394,7 @@ async function checkBusCompleteCycle(busroad, busStopSequence, busData) {
           }
         }
       }
-    }, 500);
+    }, 10);
   });
 }
 
@@ -442,7 +442,7 @@ async function checkBusOverRide(busData) {
           resolve(false)
         }
       }
-    }, 500);
+    }, 10);
   });
 }
 
@@ -498,7 +498,7 @@ async function updateBusOnroad(busData, busStopSequence, busroad, busOnroad) {
             resolve(bus)
           });
       }
-    }, 500);
+    }, 10);
   });
 
 }
@@ -544,7 +544,7 @@ async function findBusCurrentLocation(roadMapBus, lat, lng, busStopSequence, bus
       else {
         resolve({ cycleOnRoad: -1, currentOnRoad: -1, currentBusStop: -2 })
       }
-    }, 1000);
+    }, 10);
   });
 }
 
@@ -556,7 +556,7 @@ async function assignData(busData, checkOutOfRoadData) {
       busData.lng = checkOutOfRoadData.lng
       busData.gulityState1 = checkOutOfRoadData.gulityState1
       resolve(busData)
-    }, 500);
+    }, 10);
   });
 }
 
@@ -567,7 +567,7 @@ async function assigncheckBusCompleteCycle(busData, checkBusCompleteCycleData) {
       busData.cycleOnRoad = checkBusCompleteCycleData.cycleOnRoad
       busData.gulityState2 = checkBusCompleteCycleData.gulityState2
       resolve(busData)
-    }, 500);
+    }, 10);
   });
 }
 
@@ -576,7 +576,7 @@ async function assigncheckBusOverRide(busData, checkBusOverRideData) {
     setTimeout(() => {
       busData.gulityState3 = checkBusOverRideData
       resolve(busData)
-    }, 500);
+    }, 10);
   });
 }
 
@@ -651,15 +651,27 @@ app.use(require('./controllers'))
 
 var port = process.env.PORT || 3000;
 app.get('/', function (req, res) {
-  res.send('Hello World');
+  res.send('Hello W');
 })
+
 
 app.listen(port, () => {
   console.log('Started ');
-  // axios.get('https://roads.googleapis.com/v1/snapToRoads?path=13.8195814029018,100.558985662449|13.9048351671973,100.526637039089|13.9055414433391,100.52437930514|&interpolate=true&key=AIzaSyAsjL_Kc8Y6zK0pRN2UpdUBhiJGjHMA-aE')
-  // .then(data => {
-  //   console.log(data.data)
-  // })
+  // axios.get('http://analytics.dlt.transcodeglobal.com/test_businfo.txt')
+  //   .then(data => {
+  //     var busData = data.data
+  //     var arr = [];
+  //     for (let o in busData) {
+  //       if (busData.hasOwnProperty(o)) {
+  //         arr.push(busData[o]);
+  //       }
+  //     }
+  //     var str = arr[0].path
+  //     var pos = str.indexOf("ต.")
+  //     var res = arr[0].path.slice(2);
+  //     console.log(str)
+  //     console.log(pos)
+  //   })
 
 
   // var busStop = []
@@ -943,6 +955,7 @@ app.listen(port, () => {
   //     console.log("endddddd")
   //   }
   // }, 8000)
+
   // var testArray = [1, 2, 3]
   // console.log(testArray.indexOf(1))
   // console.log(testArray.indexOf(0))
