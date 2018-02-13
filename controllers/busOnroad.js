@@ -13,4 +13,19 @@ router.get('/', function (req, res) {
     })
 })
 
+router.post('/addUser', function (req, res) {
+    var newUser = User({
+        name: 'BBFL',
+        username: 'BADBOYYYYYYYY',
+        password: 'password',
+        admin: true
+    });
+
+    // save the user
+    newUser.save(function (err) {
+        if (err) throw err;
+        res.json({ 'text':'user has created' })
+    });
+})
+
 module.exports = router
