@@ -875,89 +875,89 @@ app.listen(port, () => {
 
   //-------------------------------------------------++++++++++++++++
 
-  var busStopSequence = [];
-  var roadMapBus = []
-  var roadBusStop = []
-  var busOnroad = []
-  var currentBusLocation = null
-  var busRoad = null
-  var busData = 0
+  // var busStopSequence = [];
+  // var roadMapBus = []
+  // var roadBusStop = []
+  // var busOnroad = []
+  // var currentBusLocation = null
+  // var busRoad = null
+  // var busData = 0
 
-  var busFromFile = []
-  var stream = fs.createReadStream("test22.csv");
+  // var busFromFile = []
+  // var stream = fs.createReadStream("test22.csv");
 
-  csv
-    .fromStream(stream, { headers: true })
-    .on("data", function (data) {
-      busFromFile.push({
-        index: parseInt(data.index), busID: data.busID, lat: parseFloat(data.lat), lng: parseFloat(data.lng), speed: data.speed, timeStamp: data.time
-      })
-    })
-    .on("end", function () {
+  // csv
+  //   .fromStream(stream, { headers: true })
+  //   .on("data", function (data) {
+  //     busFromFile.push({
+  //       index: parseInt(data.index), busID: data.busID, lat: parseFloat(data.lat), lng: parseFloat(data.lng), speed: data.speed, timeStamp: data.time
+  //     })
+  //   })
+  //   .on("end", function () {
 
-      Road
-        .findOne({ name: 'A1' })
-        .populate('busStopSequence')
-        .populate('roadMapBus')
-        .exec(function (err, data) {
-          cycleOnRoad = data.cycleOnRoad
-          busStopSequence = data.busStopSequence.sequence.sort()
-          roadMapBus = data.roadMapBus.roadMap
-          BusOnroad.find({}, function (err, data) {
-            busOnroad = data
-          }).then(() => {
-            //console.log(busStopSequence)
-            // getBusOnRoad(roadMapBus, bus.busID, bus.speed, busStopSequence, bus.lat, bus.lng, 'A1', bus.timeStamp).then(val => {
-            //   itemsProcessed++
-            //   chainStart()
-            //   if (itemsProcessed === busFromFile.length) {
-            //     console.log(newBusGulityArray)
-            //     console.log('ENDDDDDDD')
-            //   }
-            // })
-          })
-        })
-    })
-  setInterval(() => {
-    if (count + 5 < busFromFile.length) {
-      var i = count
-      console.log('i')
-      console.log(i)
-      Road
-        .findOne({ name: 'A1' })
-        .populate('busStopSequence')
-        .populate('roadMapBus')
-        .exec(function (err, data) {
-          cycleOnRoad = data.cycleOnRoad
-          busStopSequence = data.busStopSequence.sequence.sort()
-          roadMapBus = data.roadMapBus.roadMap
-          BusOnroad.find({}, function (err, data) {
-            busOnroad = data
-            // console.log('busOnroad')
-            // console.log(busOnroad)
-          }).then(() => {
-            getBusOnRoad(roadMapBus, busFromFile[i].busID, busFromFile[i].speed, busStopSequence, busFromFile[i].lat, busFromFile[i].lng, 'A1', busFromFile[i].timeStamp, busOnroad).then(val => {
-              count++
-              console.log(val)
-              //console.log(newBusOnRoad)
-              //console.log(busFromFile[i].timeStamp)
-              // console.log('count')
-              // console.log(count)
-              // if (i = count + 5){
-              //   // console.log(val)
-              //   // console.log(busFromFile[i].timeStamp)
-              //   // console.log(i)
-              //   console.log('it is work')
-              //   count = count + 5
-              // }
-            })
-          })
-        })
-    }
-    else {
-      console.log("endddddd")
-    }
-  }, 8000)
+  //     Road
+  //       .findOne({ name: 'A1' })
+  //       .populate('busStopSequence')
+  //       .populate('roadMapBus')
+  //       .exec(function (err, data) {
+  //         cycleOnRoad = data.cycleOnRoad
+  //         busStopSequence = data.busStopSequence.sequence.sort()
+  //         roadMapBus = data.roadMapBus.roadMap
+  //         BusOnroad.find({}, function (err, data) {
+  //           busOnroad = data
+  //         }).then(() => {
+  //           //console.log(busStopSequence)
+  //           // getBusOnRoad(roadMapBus, bus.busID, bus.speed, busStopSequence, bus.lat, bus.lng, 'A1', bus.timeStamp).then(val => {
+  //           //   itemsProcessed++
+  //           //   chainStart()
+  //           //   if (itemsProcessed === busFromFile.length) {
+  //           //     console.log(newBusGulityArray)
+  //           //     console.log('ENDDDDDDD')
+  //           //   }
+  //           // })
+  //         })
+  //       })
+  //   })
+  // setInterval(() => {
+  //   if (count + 5 < busFromFile.length) {
+  //     var i = count
+  //     console.log('i')
+  //     console.log(i)
+  //     Road
+  //       .findOne({ name: 'A1' })
+  //       .populate('busStopSequence')
+  //       .populate('roadMapBus')
+  //       .exec(function (err, data) {
+  //         cycleOnRoad = data.cycleOnRoad
+  //         busStopSequence = data.busStopSequence.sequence.sort()
+  //         roadMapBus = data.roadMapBus.roadMap
+  //         BusOnroad.find({}, function (err, data) {
+  //           busOnroad = data
+  //           // console.log('busOnroad')
+  //           // console.log(busOnroad)
+  //         }).then(() => {
+  //           getBusOnRoad(roadMapBus, busFromFile[i].busID, busFromFile[i].speed, busStopSequence, busFromFile[i].lat, busFromFile[i].lng, 'A1', busFromFile[i].timeStamp, busOnroad).then(val => {
+  //             count++
+  //             console.log(val)
+  //             //console.log(newBusOnRoad)
+  //             //console.log(busFromFile[i].timeStamp)
+  //             // console.log('count')
+  //             // console.log(count)
+  //             // if (i = count + 5){
+  //             //   // console.log(val)
+  //             //   // console.log(busFromFile[i].timeStamp)
+  //             //   // console.log(i)
+  //             //   console.log('it is work')
+  //             //   count = count + 5
+  //             // }
+  //           })
+  //         })
+  //       })
+  //   }
+  //   else {
+  //     console.log("endddddd")
+  //   }
+  // }, 8000)
 
   // var testArray = [1, 2, 3]
   // console.log(testArray.indexOf(1))
