@@ -11,6 +11,10 @@ var busOnroadSchema = new Schema({
     cycleOnRoad: Number,
     currentOnRoad: Number,
     currentBusStop: Number,
+    passCenter: false,
+    gulityState1: false,
+    gulityState2: false,
+    gulityState3: false,
 });
 
 var BusOnroad = mongoose.model('BusOnroad', busOnroadSchema);

@@ -12,6 +12,7 @@ router.post('/', function (req, res) {
     // save the user
     newRoadMapBus.save(function (err) {
         if (err) throw err;
+        console.log('save finish')
     });
     res.json({ 'test': req.body })
 })
@@ -24,6 +25,7 @@ router.post('/updated', function (req, res) {
     }).then(() =>{
         RoadMapBus.findOneAndUpdate({ busRoad: req.body.data.busRoad },{roadMap: newroad}, function (err, data) {
             if (err) throw err;
+            console.log('update finish')
                 res.json({ 'result': 'update ok' })
         })
     })
