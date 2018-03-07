@@ -10,6 +10,8 @@ var busGulitySchema = new Schema({
     state: Number,
     created_at: Date,
     timeStamp:String,
+    lat: { type: Float },
+    lng: { type: Float },
 });
 
 var BusGulity = mongoose.model('BusGulity', busGulitySchema);

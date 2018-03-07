@@ -3,12 +3,11 @@ const Schema = mongoose.Schema;
 const bcrypt = require('bcrypt');
 // create a schema
 var userSchema = new Schema({
-  firstName: String,
-  lastName: String,
-  Username: { type: String, required: true, unique: true },
-  Password: { type: String, required: true },
-  reportAccession: Boolean,
-  memberAccession: Boolean,
+  firstname: String,
+  lastname: String,
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  status: String,
 });
 
 

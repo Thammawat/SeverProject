@@ -7,6 +7,7 @@ var busContractSchema = new Schema({
     contract: [{
         contractWith: String,
         path: [{
+            contractAt: Number,
             sequence: Number,
             nameTH: String,
         }]

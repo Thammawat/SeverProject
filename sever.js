@@ -25,7 +25,7 @@ const cors = require('cors');
 const geodist = require('geodist')
 const moment = require('moment')
 var itemsProcessed = 0;
-var count = 70;
+var count = 129;
 
 Promise.promisifyAll(mongoose);
 mongoose.Promise = Promise;
@@ -221,14 +221,17 @@ async function checkBusOutofRoad(busroad, busData, roadMapBus, lat, lng, timeSta
             type: 'ขับออกนอกเส้นทาง',
             cycleOnRoad: busData.cycleOnRoad,
             timeStamp: timeStamp,
+            lat: lat,
+            lng: lng,
             state: 0
           })
           newBusGulity.save(function (err) {
-            resolve({ currentOnRoad: -1, lat: lat, lng: lng, gulityState1: true, passCenter: busData.passCenter })
+            console.log('savee gulity 1111')
           })
+          resolve({ currentOnRoad: -1, lat: lat, lng: lng, gulityState1: true, passCenter: busData.passCenter })
         } else {
           BusGulity.find({ busID: busData.busID, cycleOnRoad: busData.cycleOnRoad, state: 0 }, function (err, data) {
-            if (data !== null) {
+            if (data.length !== 0) {
               BusGulity.findOneAndUpdate({ busID: busData.busID, cycleOnRoad: busData.cycleOnRoad, state: 0 }, { state: 1 }, function (err, checkdata) {
                 resolve({ currentOnRoad: -1, lat: lat, lng: lng, gulityState1: true, passCenter: busData.passCenter })
                 console.log('update success')
@@ -399,20 +402,15 @@ async function checkBusCompleteCycle(busroad, busStopSequence, busData, timeStam
         }
         else {
           if (busData.gulityState2 === false) {
-            newBusGulityArray.push({
-              busRoad: busroad,
-              busID: busData.id,
-              type: 'ขับไม่ครบทุกป้าย',
-              cycleOnRoad: busData.cycleOnRoad,
-              timeStamp: timeStamp,
-            })
             var newBusGulity = BusGulity({
               busRoad: busroad,
               busID: busData.busID,
               type: 'ขับไม่ครบทุกป้าย',
               cycleOnRoad: busData.cycleOnRoad,
               timeStamp: timeStamp,
-              state: 1
+              lat: busData.lat,
+              lng: busData.lng,
+              state: 1,
             })
             newBusGulity.save(function (err) {
               resolve({ currentBusStop: -2, cycleOnRoad: busData.cycleOnRoad, gulityState2: true });
@@ -453,6 +451,8 @@ async function checkBusOverRide(busData, timeStamp, busOnroad) {
             type: 'ขับแซงรถในสายเดียวกัน',
             cycleOnRoad: busData.cycleOnRoad,
             timeStamp: timeStamp,
+            lat: busData.lat,
+            lng: busData.lng,
             state: 1
           })
           newBusGulity.save(function (err) {
@@ -510,18 +510,18 @@ async function updateBusOnroad(busData, busStopSequence, busroad, roadMapBus, fi
         // console.log("it is workkkk newbus = true")
         var newBus = BusOnroad({
           index: 2,
-          busRoad: busroad,
+          busRoad: busData.busRoad,
           busID: busData.busID,
-          speed: 20.5,
+          speed: busData.speed,
           lat: busData.lat,
           lng: busData.lng,
           cycleOnRoad: busData.cycleOnRoad,
           currentOnRoad: busData.currentOnRoad,
           currentBusStop: busData.currentBusStop,
-          gulityState1: false,
-          gulityState2: false,
-          gulityState3: false,
-          passCenter: false,
+          gulityState1: busData.gulityState1,
+          gulityState2: busData.gulityState2,
+          gulityState3: busData.gulityState3,
+          passCenter: busData.passCenter,
         });
         newBus.save(function (err, data) {
           if (err) throw err;
@@ -548,7 +548,7 @@ async function updateBusOnroad(busData, busStopSequence, busroad, roadMapBus, fi
             resolve(busData)
           });
       }
-    }, 20);
+    }, 10);
   });
 
 }
@@ -561,8 +561,8 @@ async function getBusOnRoad(roadMapBus, busID, speed, busStopSequence, busLat, b
   // console.log(data)
   let checkOutOfRoadData = await checkBusOutofRoad(road, data, roadMapBus, busLat, busLng, timeStamp, centerPath)
   data = await assignData(data, checkOutOfRoadData)
-  // console.log('data2')
-  // console.log(data)
+  console.log('data2')
+  console.log(data)
   let checkBusCompleteCycleData = await checkBusCompleteCycle(road, busStopSequence, data, timeStamp, currentCycleOnroad)
   data = await assigncheckBusCompleteCycle(data, checkBusCompleteCycleData)
   // console.log('data3')
@@ -674,6 +674,239 @@ findPath = (path1, path2) => {
   }
 }
 
+findRoadPath = (busStop1, busStop2) => {
+  let roadBusStop = []
+  let contactPath = []
+  let start = []
+  let end = []
+  let contract = []
+  let contract1 = []
+  RoadBusStop.find({}, function (err, data) {
+    roadBusStop = data
+  }).then(() => {
+    BusContract.find({}, function (err, data) {
+      contactPath = data
+    }).then(() => {
+      for (var j = 0; j < roadBusStop.length; j++) {
+        const startPath = roadBusStop[j].busStop.filter(element => (
+          element.nameTH === busStop1
+        ))
+        const endPath = roadBusStop[j].busStop.filter(element => (
+          element.nameTH === busStop2
+        ))
+        if (startPath.length !== 0) {
+          start.push({ pathStart: 0, path: roadBusStop[j].busRoad })
+        }
+        if (endPath.length !== 0) {
+          end.push({ pathEnd: 0, path: roadBusStop[j].busRoad })
+        }
+      }
+      console.log(start)
+      console.log(end)
+
+      for (var j = 0; j < start.length; j++) {
+        end.forEach(endData => {
+          var endContact = contactPath.filter(element => (
+            element.busRoad === endData.path
+          ))
+          var result = endContact[0].contract.filter(element => (
+            element.contractWith === start[j].path
+          ))
+          if (result.length !== 0) {
+            contract.push({ start: start[j].path, end: endData })
+          }
+        })
+      }
+      if (contract.length === 0) {
+        start.forEach(data => {
+          var startContact = contactPath.filter(element => (
+            element.busRoad === data.path
+          ))
+          startContact[0].contract.forEach(element => {
+            start.push({ pathStart: startContact[0].busRoad, path: element.contractWith })
+          })
+        })
+        end.forEach(data => {
+          var endContact = contactPath.filter(element => (
+            element.busRoad === data.path
+          ))
+          endContact[0].contract.forEach(element => {
+            end.push({ pathEnd: endContact[0].busRoad, path: element.contractWith })
+          })
+        })
+      }
+      // console.log(start)
+      // console.log(end)
+      for (var j = 1; j < start.length; j++) {
+        end.forEach(endData => {
+          var endContact = contactPath.filter(element => (
+            element.busRoad === endData.path
+          ))
+          var result = endContact[0].contract.filter(element => (
+            element.contractWith === start[j].path
+          ))
+          if (result.length !== 0) {
+            contract.push({ start: start[j], end: endData })
+          }
+        })
+      }
+      var answer = []
+      console.log(contract)
+      var test = contract[2].start
+      for (var i = 0; i < contract.length; i++) {
+        var roadPath = []
+        var roadPathStart = []
+        var roadPathEnd = []
+        var testStart = contract[i].start
+        if (testStart.pathStart === 0) {
+          roadPathStart.push(testStart.path)
+        }
+        else {
+          while (testStart.pathStart !== 0) {
+            roadPathStart.push(testStart.path)
+            roadPathStart.push(testStart.pathStart)
+            var result = start.filter(element => (
+              element.path === testStart.pathStart
+            ))
+            testStart = result[0]
+          }
+        }
+        var test = contract[i].end
+        if (test.pathEnd === 0) {
+          roadPathEnd.push(test.path)
+        }
+        else {
+          while (test.pathEnd !== 0) {
+            roadPathEnd.push(test.path)
+            roadPathEnd.push(test.pathEnd)
+            var result = end.filter(element => (
+              element.path === test.pathEnd
+            ))
+            test = result[0]
+          }
+        }
+        roadPathStart = roadPathStart.reverse()
+        roadPath = roadPathStart.concat(roadPathEnd)
+        answer.push({ roadPath: roadPath })
+      }
+      var minRoadPath = 0
+      answer.forEach((element, index) => {
+        if (index === 0) {
+          minRoadPath = element.roadPath.length
+        }
+        else {
+          if (element.roadPath.length < minRoadPath)
+            minRoadPath = element.roadPath.length
+        }
+      })
+      console.log(minRoadPath)
+      answer = answer.filter(element => (element.roadPath.length === minRoadPath))
+      console.log(answer)
+    })
+  })
+}
+
+roadPathWay = (startPlace, endPlace, roadPath) => {
+  let roadBusStop = []
+  let roadMapBus = []
+  let contactPath = []
+  let roadWay = []
+  let inItPath = null
+  RoadBusStop.find({}, function (err, data) {
+    roadBusStop = data
+  }).then(() => {
+    RoadMapBus.find({}, function (err, data) {
+      roadMapBus = data
+    }).then(() => {
+      BusContract.find({}, function (err, data) {
+        contactPath = data
+      }).then(() => {
+        var i = 0;
+        for (var i = 0; i < roadPath.length; i++) {
+          if (i === 0) {
+            var busStopPath = roadBusStop.filter(element => (
+              element.busRoad === roadPath[0]
+            ))
+            var contract = contactPath.filter(element => (
+              element.busRoad === roadPath[0]
+            ))
+            var result = busStopPath[0].busStop.filter(element => (
+              element.nameTH === startPlace
+            ))
+            var startSequence = result[0].sequence
+            //console.log(startSequence)
+            var contractWith = contract[0].contract.filter(element => (
+              element.contractWith === roadPath[1]
+            ))
+            var resultPath = contractWith[0].path.filter(element => (
+              element.sequence > startSequence
+            ))
+            var endSequence = resultPath[0].sequence
+            inItPath = resultPath[0].contractAt
+            //console.log(endSequence)
+            var roadMap = roadMapBus.filter(element => (
+              element.busRoad === roadPath[0]
+            ))
+            // console.log(busStopPath[0].busStop[startSequence])
+            // console.log(busStopPath[0].busStop[endSequence])
+            var path = roadMap[0].roadMap.filter(element => (
+              element.index >= busStopPath[0].busStop[startSequence].roadIndex &&
+              element.index <= busStopPath[0].busStop[endSequence].roadIndex
+            ))
+            //console.log(roadMap[0].roadMap)
+            console.log(path)
+          }
+          else if (i === roadPath.length - 1) {
+            var busStopPath = roadBusStop.filter(element => (
+              element.busRoad === roadPath[i]
+            ))
+            var result = busStopPath[0].busStop.filter(element => (
+              element.nameTH === endPlace
+            ))
+            var endSequence = result[0].sequence
+            var roadMap = roadMapBus.filter(element => (
+              element.busRoad === roadPath[i]
+            ))
+            var path = roadMap[0].roadMap.filter(element => (
+              element.index >= busStopPath[0].busStop[inItPath].roadIndex &&
+              element.index <= busStopPath[0].busStop[endSequence].roadIndex
+            ))
+            console.log("-------------------")
+            console.log(path)
+            console.log(inItPath)
+          }
+          else {
+            var busStopPath = roadBusStop.filter(element => (
+              element.busRoad === roadPath[i]
+            ))
+            var contract = contactPath.filter(element => (
+              element.busRoad === roadPath[i]
+            ))
+            var contractWith = contract[0].contract.filter(element => (
+              element.contractWith === roadPath[i + 1]
+            ))
+            var startSequence = inItPath
+            var resultPath = contractWith[0].path.filter(element => (
+              element.sequence > inItPath
+            ))
+            var endSequence = resultPath[0].sequence
+            inItPath = resultPath[0].contractAt
+            var roadMap = roadMapBus.filter(element => (
+              element.busRoad === roadPath[i]
+            ))
+            var path = roadMap[0].roadMap.filter(element => (
+              element.index >= busStopPath[0].busStop[startSequence].roadIndex &&
+              element.index <= busStopPath[0].busStop[endSequence].roadIndex
+            ))
+            console.log("xxxxxxxxxxxx")
+            console.log(path)
+          }
+        }
+      })
+    })
+  })
+
+}
 testRecusive = (count) => {
   if (count > 0) {
     return count * testRecusive(count - 1)
@@ -709,27 +942,27 @@ app.get('/', function (req, res) {
 
 app.listen(port, () => {
   console.log('Started ');
-  // var day = new Date("2013-02-08 09:30:26");
-  // console.log(day)
+  var s = "ต.33"
+  var a = s.slice(2)
+  // console.log(a)
   // axios.get('http://analytics.dlt.transcodeglobal.com/test_businfo.txt')
   //   .then(data => {
   //     var busData = data.data
   //     var arr = [];
-  //     for (let o in busData) {
-  //       if (busData.hasOwnProperty(o)) {
-  //         arr.push(busData[o]);
-  //       }
-  //     }
+  //     var count = 0;
+  //     arr = Object.values(busData)
+  //     // for (count = 0; count < Object.keys(busData).length - 1; count++) {
+  //     //   var insertArr = Object.entries(busData)[count]
+  //     //   insertArr[1].busID = insertArr[0]
+  //     //   arr.push(insertArr[1])
+  //     // }
   //     const result = arr.filter(element => (
-  //       element.path === "39" || element.path === "ต.39"
+  //       element.path === "ต.97"
   //     ))
   //     console.log(result)
-  //     // var str = arr[0].path
-  //     // var pos = str.indexOf("ต.")
-  //     // var res = arr[0].path.slice(2);
-  //     // console.log(str)
-  //     // console.log(pos)
   //   })
+  //findRoadPath("โรงเรียนหอวัง", "โรงแรมมิโดโฮเต็ล")
+  //roadPathWay("โรงเรียนหอวัง", "ซอยพหลโยธิน 8,ซอยสายลม", ['A1', '39','97'])
 
   // var busStop = []
   // var roadBusStop = []
@@ -743,6 +976,74 @@ app.listen(port, () => {
   //   , 'ตลาดบางซ่อน,ซอยกรุงเทพ-นนทบุรี 25', 'ซอยกรุงเทพ-นนทบุรี 29', 'ตรงข้ามกรมยุทธบริการ(ขาออก)', 'บิ๊กซีวงศ์สว่าง', 'ตรงข้ามซอยวัดหลวง', 'ตรงข้ามวัดน้อย,ตรงข้ามซอยวงศ์สว่าง 15', 'ซอยยิ้มประยูร', 'วัดเสาหิน', 'ตรงข้ามมหาวิทยาลัยเทคโนโลยีพระจอมเกล้าพระนครเหนือ', 'ใต้สะพานพระราม7(ขาออก)', 'ธนาคารอาคารสงเคราะห์สาขาพระราม7', 'ตรงข้ามหมู่บ้านพิบูลย์บางซื่อ', 'โรงเรียนสตรีนนทบุรี-วัดปากน้ำ', 'โรงเรียนเขมพิทยา', 'ตรงข้ามหมู่บ้านพิบูลย์การ์เดน,ซอยแสงเสนีย์1', 'สวนอาหารนัดพบ', 'ตรงข้ามวัดกำแพง', 'วิทยาลัยพาณิชย์พงษ์สวัสดิ์เทคโนโลยี',
   //   'ตลาดนนท์', 'ตรงข้ามซอยประชาราษฎ์ 13', 'โรงเรียนเทศบาล 2,วัดทินกรนิมิต', 'ซอยประชาราษฏร์ 16/1,ตรงข้ามโรงเรียนคริสเตียนวิทยา', 'ตรงข้ามโรงเรียนวัดลานนาบุญ', 'บิ๊กซี นนทบุรี'
   // ]
+
+  var busStopSequence = [];
+  var roadMapBus = []
+  var roadBusStop = []
+  var busOnroad = []
+  var currentBusLocation = null
+  var busRoad = null
+  var busData = 0
+  var currentCycleOnroad = 0
+  var centerPath = null
+  var busFromFile = []
+  var firstBusStop = null
+  var busFromUrl = null
+  var road = null
+  var roadData = null
+  var busOnroadData = null
+
+
+
+  axios.get('http://analytics.dlt.transcodeglobal.com/test_businfo.txt')
+    .then(data => {
+      var busData = data.data
+      var count = 0;
+      busFromUrl = Object.values(busData)
+      busFromUrl = busFromUrl.filter(element => (
+        element.path === "39"
+      ))
+      console.log(busFromUrl)
+    }).then(() => {
+      Road
+        .find({})
+        .populate('busStopSequence')
+        .populate('roadMapBus')
+        .exec(function (err, data) {
+          road = data
+          BusOnroad.find({}, function (err, data) {
+            busOnroad = data
+          }).then(() => {
+            for (let i = 0; i < busFromUrl.length; i++) {
+              if (busFromUrl[i].path === '39') {
+                roadData = road.filter(element => (
+                  element.name === '39'
+                ))
+                busStopSequence = roadData[0].busStopSequence.sequence
+                console.log(busStopSequence)
+                roadMapBus = roadData[0].roadMapBus.roadMap
+                console.log(roadMapBus)
+                centerPath = roadData[0].centerPath
+                console.log(centerPath)
+                firstBusStop = roadData[0].firstBusStop
+                console.log(firstBusStop)
+                currentCycleOnroad = roadData[0].currentCycleOnRoad
+                console.log(currentCycleOnroad)
+                busOnroadData= busOnroad.filter(element => (
+                  element.busRoad === '39'
+                ))
+              }
+              setTimeout(function () {
+                getBusOnRoad(roadMapBus, busFromUrl[i].busID, busFromUrl[i].speed, busStopSequence, busFromUrl[i].lat, busFromUrl[i].lon, busFromUrl[i].path, busFromUrl[i].time, busOnroadData, currentCycleOnroad, centerPath, firstBusStop).then(val => {
+                  console.log(val)
+                })
+              }, 150);
+            }
+          })
+        })
+    })
+
+
 
   // // //create busStopOnroad
   // AllBusStop.find({}, function (err, data) {
@@ -776,75 +1077,123 @@ app.listen(port, () => {
   //     console.log('busStop 97 has create')
   //   })
   // })
-
-
   //create busSequence
   // var busStop = []
   // var roadMap = []
+  // var seq = []
   // var sequenceBusStop = []
+  // var distest = []
   // var i = 0
-  // RoadBusStop.find({ busRoad: 'A1' }, function (err, data) {
+  // RoadBusStop.find({ busRoad: '97' }, function (err, data) {
   //   busStop = data[0].busStop
   // }).then(() => {
-  //   RoadMapBus.find({ busRoad: 'A1' }, function (err, data) {
+  //   RoadMapBus.find({ busRoad: '97' }, function (err, data) {
   //     roadMap = data[0].roadMap
   //   }).then(() => {
-  //     busStop.forEach(element => {
-  //       const result = roadMap.filter(data =>
-  //         ((parseFloat(data.lat).toFixed(3) === parseFloat(element.lat).toFixed(3) || parseFloat(data.lat).toFixed(4) === parseFloat(element.lat).toFixed(4))
-  //           || (parseFloat(data.lat).toFixed(4) === parseFloat(element.lat).toFixed(4) || parseFloat(data.lat).toFixed(3) === parseFloat(element.lat).toFixed(3))
-  //           || (parseFloat(data.lat).toFixed(4) === parseFloat(element.lat).toFixed(4) || parseFloat(data.lat).toFixed(4) === parseFloat(element.lat).toFixed(4))
-  //         )
-  //       )
-
-  //       if (result.length !== 0) {
-  //         if (i < busStop[Math.floor(busStop.length / 2)].sequence) {
-  //           const sequenceResult = result.filter(data => {
-  //             data.index < roadMap[Math.floor(roadMap.length / 2)].index
-  //           })
-  //           sequenceBusStop.push(result[0].index)
+  //     busStop.forEach((element, index) => {
+  //       roadMap.forEach(data => {
+  //         const checkDistance = geodist({ lat: data.lat, lon: data.lng }, { lat: element.lat, lon: element.lng }, { exact: true, unit: 'km' })
+  //         if (checkDistance < 0.2) {
+  //           seq.push({ index: index, seq: data.index })
+  //         }
+  //       })
+  //     })
+  //   }).then(() => {
+  //     for (var j = 0; j < busStop.length; j++) {
+  //       var result = seq.filter(element => (
+  //         element.index === j
+  //       ))
+  //       if (result.length > 0) {
+  //         if (j <= 56) {
+  //           var finalPath = result.filter(element => (
+  //             element.seq < 495
+  //           ))
+  //           var closePoint = 0
+  //           var point = 0
+  //           for (var z = 0; z < finalPath.length; z++) {
+  //             var dis = geodist({ lat: roadMap[finalPath[z].seq].lat, lon: roadMap[finalPath[z].seq].lng }, { lat: busStop[j].lat, lon: busStop[j].lng }, { exact: true, unit: 'km' })
+  //             if (z === 0) {
+  //               closePoint = dis
+  //               point = finalPath[z].seq
+  //             }
+  //             else {
+  //               if (dis <= closePoint)
+  //                 closePoint = dis
+  //               point = finalPath[z].seq
+  //             }
+  //             if (z === finalPath.length - 1) {
+  //               distest.push({ index: j, dis: point })
+  //             }
+  //           }
+  //           // if (finalPath.length === 0) {
+  //           //   sequenceBusStop.push(sequenceBusStop[j - 1])
+  //           // }
+  //           // else {
+  //           //   sequenceBusStop.push(finalPath[finalPath.length-1])
+  //           // }
+  //           sequenceBusStop.push(finalPath[finalPath.length - 1].seq)
   //         }
   //         else {
-  //           const sequenceResult = result.filter(data => {
-  //             data.index > roadMap[Math.floor(roadMap.length / 2)].index
-  //           })
-  //           sequenceBusStop.push(result[result.length - 1].index)
+  //           var finalPath = result.filter(element => (
+  //             element.seq >= 495
+  //           ))
+  //           for (var z = 0; z < finalPath.length; z++) {
+  //             var dis = geodist({ lat: roadMap[finalPath[z].seq].lat, lon: roadMap[finalPath[z].seq].lng }, { lat: busStop[j].lat, lon: busStop[j].lng }, { exact: true, unit: 'km' })
+  //             if (z === 0) {
+  //               closePoint = dis
+  //               point = finalPath[z].seq
+  //             }
+  //             else {
+  //               if (dis <= closePoint)
+  //                 closePoint = dis
+  //               point = finalPath[z].seq
+  //             }
+  //             if (z === finalPath.length - 1) {
+  //               distest.push({ index: j, dis: point })
+  //             }
+  //           }
+  //           // if (finalPath.length === 0) {
+  //           //   sequenceBusStop.push(sequenceBusStop[j - 1])
+  //           // }
+  //           // else {
+  //           //   sequenceBusStop.push(finalPath[finalPath.length-1])
+  //           // }
+  //           sequenceBusStop.push(finalPath[finalPath.length - 1].seq)
   //         }
   //       }
-  //       if (result.length === 0) {
-  //         console.log(i)
+  //       else {
+  //         sequenceBusStop.push(sequenceBusStop[j - 1])
   //       }
-  //       i = i + 1
-  //     })
+  //     }
   //     sequenceBusStop.push(roadMap.length - 1)
-  //   }).then(() => {
-  //     //console.log(sequenceBusStop)
-  //     var sequence = sequenceBusStop.sort((a, b) => { return a - b })
-  //     // var newsequenceBusStop = BusStopSequence({
-  //     //   busRoad: 'A1',
-  //     //   sequence: sequence
+  //     sequenceBusStop.forEach((element, index) => {
+  //       console.log(index)
+  //       console.log(element)
+  //     })
+  //     RoadBusStop.find({ busRoad: '97' }, function (err, data) {
+  //       busStop = data[0].busStop
+  //     }).then(() => {
+  //       busStop.forEach((element, index) => {
+  //         element.roadIndex = sequenceBusStop[index]
+  //       })
+  //       RoadBusStop.findOneAndUpdate({ busRoad: '97' }, { busStop: busStop }, function (err, bus) {
+  //         if (err) throw err;
+  //         console.log('update finish')
+  //       })
+  //     })
+
+  //     // var newBusStopSequence = BusStopSequence({
+  //     //   busRoad: '97',
+  //     //   sequence:  sequenceBusStop
   //     // })
-  //     // newsequenceBusStop.save(function (err) {
+  //     // newBusStopSequence.save(function(err) {
   //     //   if (err) throw err;
-  //     //   console.log('busSequence A1 has create')
-  //     // })
-  //       var sequence = sequenceBusStop.sort()
-  //     var newsequence = []
-  //     var i = 0
-  //     for (i = 0; i < sequence.length; i++) {
-  //       if (sequence[i] === sequence[i + 1]) {
-  //         sequence[i + 1] = 0
-  //       }
-  //     }
-  //     i = 0
-  //     for (i = 0; i < sequence.length; i++) {
-  //       if (sequence[i] !== 0)
-  //         newsequence.push(sequence[i])
-  //     }
-  //     newsequence = newsequence.sort((a, b) => { return a - b })
-  //     BusStopSequence.findOneAndUpdate({ busRoad: 'A1' },
+  //     //   console.log('BusStopSequence created!');
+  //     // });
+
+  //     BusStopSequence.findOneAndUpdate({ busRoad: '97' },
   //       {
-  //         sequence: newsequence
+  //         sequence: sequenceBusStop
   //       }, function (err, bus) {
   //         if (err) throw err;
   //         console.log('update finish')
@@ -855,24 +1204,28 @@ app.listen(port, () => {
   //create Road
   // var busStopSequence = []
   // var roadMapBus = []
-  // BusStopSequence.find({ busRoad: '63' }, function (err, data) {
+  // BusStopSequence.find({ busRoad: '97' }, function (err, data) {
   //   busStopSequence = data
   //   console.log(busStopSequence)
   // }).then(() => {
-  //   RoadMapBus.find({ busRoad: '63' }, function (err, data) {
+  //   RoadMapBus.find({ busRoad: '97' }, function (err, data) {
   //     roadMapBus = data
   //     console.log(roadMapBus)
   //   }).then(() => {
   //     var newRoad = Road({
-  //       name: '63',
-  //       fullname: '63 อู่นครอินทร์-อนุสาวรีย์ชัยสมรภูมิ',
+  //       name: '97',
+  //       fullname: '97 กระทรวงสาธารณสุข (นนทบุรี) - โรงพยาบาลสงฆ์',
   //       currentCycleOnRoad: 0,
   //       busStopSequence: busStopSequence[0]._id,
   //       roadMapBus: roadMapBus[0]._id,
   //       centerPath: {
-  //         index: 340,
-  //         lat: 13.7657305088901,
-  //         lng: 100.53802991187,
+  //         index: 348,
+  //         lat: 13.76093342274781,
+  //         lng: 100.528105428693,
+  //       },
+  //       firstBusStop:{
+  //         lat:13.8473928273074,
+  //         lng: 100.514169007923,
   //       }
   //     });
   //     newRoad.save(function (err) {
@@ -904,7 +1257,7 @@ app.listen(port, () => {
   //           element.nameTH === data.nameTH
   //         ))
   //         if (result.length !== 0)
-  //           path.push({ nameTH: result[0].nameTH, sequence: result[0].sequence })
+  //           path.push({ nameTH: result[0].nameTH, sequence: element.sequence ,contractAt:result[0].sequence })
   //       })
   //       if (path.length !== 0) {
   //         contract.push({ contractWith: resultBusStop[j].busRoad, path })
@@ -918,28 +1271,43 @@ app.listen(port, () => {
   //     newbusCotract.save(function (err) {
   //       if (err) throw err;
   //     });
-  //     console.log(roadBusStop[i].busRoad)
-  //     console.log(contract)
+  //     // console.log(roadBusStop[i].busRoad)
+  //     // console.log(contract)
   //   }
   // })
 
   //creater road center
 
   // var roadMap = []
-  // RoadMapBus.find({ busRoad: '63' }, function (err, data) {
+  // RoadMapBus.find({ busRoad: '97' }, function (err, data) {
   //   if (err) throw err;
   //   roadMap = data[0].roadMap
   // }).then(() => {
   //   const result = roadMap.filter(element => (
-  //     ((parseFloat(13.7657305088901).toFixed(3) === parseFloat(element.lat).toFixed(3) || parseFloat(100.53802991187).toFixed(4) === parseFloat(element.lng).toFixed(4))
-  //       || (parseFloat(13.7657305088901).toFixed(4) === parseFloat(element.lat).toFixed(4) || parseFloat(100.53802991187).toFixed(3) === parseFloat(element.lng).toFixed(3))
-  //       || (parseFloat(13.7657305088901).toFixed(4) === parseFloat(element.lat).toFixed(4) || parseFloat(100.53802991187).toFixed(4) === parseFloat(element.lng).toFixed(4))
-  //       || (parseFloat(13.7657305088901).toFixed(3) === parseFloat(element.lat).toFixed(3) && parseFloat(100.53802991187).toFixed(3) === parseFloat(element.lng).toFixed(3))
+  //     ((parseFloat(13.7609334227478).toFixed(3) === parseFloat(element.lat).toFixed(3) || parseFloat(100.528105428693).toFixed(4) === parseFloat(element.lng).toFixed(4))
+  //       || (parseFloat(13.7609334227478).toFixed(4) === parseFloat(element.lat).toFixed(4) || parseFloat(100.528105428693).toFixed(3) === parseFloat(element.lng).toFixed(3))
+  //       || (parseFloat(13.7609334227478).toFixed(4) === parseFloat(element.lat).toFixed(4) || parseFloat(100.528105428693).toFixed(4) === parseFloat(element.lng).toFixed(4))
+  //       || (parseFloat(13.7609334227478).toFixed(3) === parseFloat(element.lat).toFixed(3) && parseFloat(100.528105428693).toFixed(3) === parseFloat(element.lng).toFixed(3))
   //     )
   //     ))
   //   console.log(result[Math.floor(result.length / 2)])
   // })
 
+  // var roadMap = []
+  // RoadMapBus.find({ busRoad: '97' }, function (err, data) {
+  //   roadMap = data[0].roadMap
+  // }).then(() => {
+  //   for (var i = 0; i < roadMap.length; i++) {
+  //     roadMap[i].index = i
+  //   }
+  //   RoadMapBus.findOneAndUpdate({ busRoad: '97' },
+  //     {
+  //       roadMap: roadMap
+  //     }, function (err, bus) {
+  //       if (err) throw err;
+  //       console.log('update finish')
+  //     });
+  // })
 
 
 
@@ -1031,58 +1399,104 @@ app.listen(port, () => {
 
   //-------------------------------------------------++++++++++++++++
 
-  // var busStopSequence = [];
-  // var roadMapBus = []
-  // var roadBusStop = []
-  // var busOnroad = []
-  // var currentBusLocation = null
-  // var busRoad = null
-  // var busData = 0
-  // var currentCycleOnroad = 0
-  // var centerPath = null
-  // var busFromFile = []
-  // var firstBusStop = null
-  // var stream = fs.createReadStream("test22.csv");
+  var busStopSequence = [];
+  var roadMapBus = []
+  var roadBusStop = []
+  var busOnroad = []
+  var currentBusLocation = null
+  var busRoad = null
+  var busData = 0
+  var currentCycleOnroad = 0
+  var centerPath = null
+  var busFromFile = []
+  var firstBusStop = null
+  var busFromUrl = null
+  var stream = fs.createReadStream("97.csv");
 
-  // csv
-  //   .fromStream(stream, { headers: true })
-  //   .on("data", function (data) {
-  //     busFromFile.push({
-  //       index: parseInt(data.index), busID: data.busID, lat: parseFloat(data.lat), lng: parseFloat(data.lng), speed: data.speed, timeStamp: data.time
-  //     })
-  //   })
-  //   .on("end", function () {
-
-  //     Road
-  //       .findOne({ name: 'A1' })
-  //       .populate('busStopSequence')
-  //       .populate('roadMapBus')
-  //       .exec(function (err, data) {
-  //         cycleOnRoad = data.cycleOnRoad
-  //         busStopSequence = data.busStopSequence.sequence.sort()
-  //         roadMapBus = data.roadMapBus.roadMap
-  //         BusOnroad.find({}, function (err, data) {
-  //           busOnroad = data
-  //         }).then(() => {
-  //           //console.log(busStopSequence)
-  //           // getBusOnRoad(roadMapBus, bus.busID, bus.speed, busStopSequence, bus.lat, bus.lng, 'A1', bus.timeStamp).then(val => {
-  //           //   itemsProcessed++
-  //           //   chainStart()
-  //           //   if (itemsProcessed === busFromFile.length) {
-  //           //     console.log(newBusGulityArray)
-  //           //     console.log('ENDDDDDDD')
-  //           //   }
-  //           // })
-  //         })
-  //       })
-  //   })
+  csv
+    .fromStream(stream, { headers: true })
+    .on("data", function (data) {
+      busFromFile.push({
+        index: parseInt(data.index), busID: data.busID, lat: parseFloat(data.lat), lng: parseFloat(data.lng), speed: data.speed, timeStamp: data.time
+      })
+    })
+    .on("end", function () {
+      // Road
+      //   .find({})
+      //   .populate('busStopSequence')
+      //   .populate('roadMapBus')
+      //   .exec(function (err, data) {
+      //     cycleOnRoad = data.cycleOnRoad
+      //     busStopSequence = data.busStopSequence.sequence.sort()
+      //     roadMapBus = data.roadMapBus.roadMap
+      //     BusOnroad.find({}, function (err, data) {
+      //       busOnroad = data
+      //     }).then(() => {
+      //console.log(busStopSequence)
+      // getBusOnRoad(roadMapBus, bus.busID, bus.speed, busStopSequence, bus.lat, bus.lng, 'A1', bus.timeStamp).then(val => {
+      //   itemsProcessed++
+      //   chainStart()
+      //   if (itemsProcessed === busFromFile.length) {
+      //     console.log(newBusGulityArray)
+      //     console.log('ENDDDDDDD')
+      //   }
+      // })
+      //   })
+      // })
+    })
   // setInterval(() => {
+  //   // if (count + 5 < busFromFile.length) {
+  //   axios.get('http://analytics.dlt.transcodeglobal.com/test_businfo.txt')
+  //     .then(data => {
+  //       var busData = data.data
+  //       arr = Object.values(busData)
+  //       // var arr = [];
+  //       // var count = 0;
+  //       // for (count = 0; count < Object.keys(busData).length - 1; count++) {
+  //       //   var insertArr = Object.entries(busData)[count]
+  //       //   insertArr[1].busID = insertArr[0]
+  //       //   arr.push(insertArr[1])
+  //       // }
+  //       const result = arr.filter(element => (
+  //         element.path === "63"
+  //       ))
+  //       busFromUrl = result
+  //       console.log(busFromUrl)
+  //     }).then(() => {
+  //       Road
+  //         .find({})
+  //         .populate('busStopSequence')
+  //         .populate('roadMapBus')
+  //         .exec(function (err, data) {
+  //           busStopSequence = data.busStopSequence.sequence
+  //           roadMapBus = data.roadMapBus.roadMap
+  //           centerPath = data.centerPath
+  //           firstBusStop = data.firstBusStop
+  //           currentCycleOnroad = data.currentCycleOnRoad
+  //           BusOnroad.find({}, function (err, data) {
+  //             busOnroad = data
+  //           }).then(() => {
+  //             // for (let i = 0; i < busFromUrl.length; i++) {
+  //             //   setTimeout(function () {
+  //             //     getBusOnRoad(roadMapBus, busFromUrl[i].busID, busFromUrl[i].speed, busStopSequence, busFromUrl[i].lat, busFromUrl[i].lon, '63', busFromUrl[i].time, busOnroad, currentCycleOnroad, centerPath, firstBusStop).then(val => {
+  //             //       console.log(val)
+  //             //     })
+  //             //   }, 150);
+  //             // }
+  //           })
+  //         })
+  //     })
+  //   // }
+  //   // else {
+  //   //   console.log("endddddd")
+  //   // }
+  // }, 60000)
+
+  // setInterval(() => {
+  //   var i = count
   //   if (count + 5 < busFromFile.length) {
-  //     var i = count
-  //     console.log('i')
-  //     console.log(i)
   //     Road
-  //       .findOne({ name: 'A1' })
+  //       .findOne({ name: '97' })
   //       .populate('busStopSequence')
   //       .populate('roadMapBus')
   //       .exec(function (err, data) {
@@ -1091,23 +1505,13 @@ app.listen(port, () => {
   //         centerPath = data.centerPath
   //         firstBusStop = data.firstBusStop
   //         currentCycleOnroad = data.currentCycleOnRoad
-  //         BusOnroad.find({ busRoad: 'A1' }, function (err, data) {
+  //         BusOnroad.find({ busRoad: '97' }, function (err, data) {
   //           busOnroad = data
   //         }).then(() => {
-  //           getBusOnRoad(roadMapBus, busFromFile[i].busID, busFromFile[i].speed, busStopSequence, busFromFile[i].lat, busFromFile[i].lng, 'A1', busFromFile[i].timeStamp, busOnroad, currentCycleOnroad, centerPath, firstBusStop).then(val => {
-  //             count++
+  //           getBusOnRoad(roadMapBus, busFromFile[i].busID, busFromFile[i].speed, busStopSequence, busFromFile[i].lat, busFromFile[i].lng, '97', busFromFile[i].time, busOnroad, currentCycleOnroad, centerPath, firstBusStop).then(val => {
+  //             console.log(i)
   //             console.log(val)
-  //             //console.log(newBusOnRoad)
-  //             //console.log(busFromFile[i].timeStamp)
-  //             // console.log('count')
-  //             // console.log(count)
-  //             // if (i = count + 5){
-  //             //   // console.log(val)
-  //             //   // console.log(busFromFile[i].timeStamp)
-  //             //   // console.log(i)
-  //             //   console.log('it is work')
-  //             //   count = count + 5
-  //             // }
+  //             count = count+1
   //           })
   //         })
   //       })
@@ -1116,6 +1520,15 @@ app.listen(port, () => {
   //     console.log("endddddd")
   //   }
   // }, 1000)
+
+
+  // setInterval(() => {
+  //   var day = new Date();
+  //   console.log(day.getMinutes())
+  //   console.log(day.getHours()) 
+  //   if(day.getMinutes() === 43 && day.getHours() === 14)
+  //   console.log("it is workk")
+  // }, 60000)
 
 
 });

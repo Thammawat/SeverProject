@@ -7,6 +7,7 @@ var roadBusStopSchema = new Schema({
     busStop: [{
         sequence: Number,
         index: Number,
+        roadIndex: Number,
         nameTH: String,
         nameEG: String,
         detail: String,
