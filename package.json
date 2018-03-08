@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npm run && node sever.js",
+    "serve": "pm2 start sever.js",
     "dev": "babel src -d  && node sever.js"
   },
   "author": "",
@@ -34,6 +35,7 @@
     "mongoose-float": "^1.0.2",
     "mongoose-promised": "^0.1.0",
     "pdfkit": "^0.8.3",
+    "pm2": "^2.10.1",
     "yarn": "^1.3.2"
   },
   "devDependencies": {

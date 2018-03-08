@@ -256,12 +256,12 @@ async function checkBusOutofRoad(busroad, busData, roadMapBus, lat, lng, timeSta
         else {
           const indexRoadGo = roadMapBus.filter(element => (
             (((parseFloat(element.lat).toFixed(3) === parseFloat(lat).toFixed(3)) && (parseFloat(element.lng).toFixed(3) === parseFloat(lng).toFixed(3))) ||
-              (parseFloat(checkDistance(element.lat, element.lng, lat, lng)) < parseFloat(1)))
+              (parseFloat(checkDistance(element.lat, element.lng, lat, lng)) < parseFloat(1.5)))
             && (element.index < centerPath.index)
           ))
           const indexRoadReturn = roadMapBus.filter(element => (
             (((parseFloat(element.lat).toFixed(3) === parseFloat(lat).toFixed(3)) && (parseFloat(element.lng).toFixed(3) === parseFloat(lng).toFixed(3))) ||
-              parseFloat(checkDistance(element.lat, element.lng, lat, lng)) < parseFloat(1))
+              parseFloat(checkDistance(element.lat, element.lng, lat, lng)) < parseFloat(1.5))
             && (element.index > centerPath.index)
           ))
           const checkPassCenter = geodist({ lat: lat, lon: lng }, { lat: centerPath.lat, lon: centerPath.lng }, { exact: true, unit: 'km' })
@@ -274,6 +274,7 @@ async function checkBusOutofRoad(busroad, busData, roadMapBus, lat, lng, timeSta
           }
           if (busData.passCenter !== true) {
             if (indexRoadGo.length === 0) {
+
               const newIndexRoadGo = resultCheckOutOfRoad.filter(element => (element.index < centerPath.index))
               resolve({
                 currentOnRoad: newIndexRoadGo[Math.floor(newIndexRoadGo.length / 2)].index,
@@ -995,53 +996,6 @@ app.listen(port, () => {
 
 
 
-  axios.get('http://analytics.dlt.transcodeglobal.com/test_businfo.txt')
-    .then(data => {
-      var busData = data.data
-      var count = 0;
-      busFromUrl = Object.values(busData)
-      busFromUrl = busFromUrl.filter(element => (
-        element.path === "39"
-      ))
-      console.log(busFromUrl)
-    }).then(() => {
-      Road
-        .find({})
-        .populate('busStopSequence')
-        .populate('roadMapBus')
-        .exec(function (err, data) {
-          road = data
-          BusOnroad.find({}, function (err, data) {
-            busOnroad = data
-          }).then(() => {
-            for (let i = 0; i < busFromUrl.length; i++) {
-              if (busFromUrl[i].path === '39') {
-                roadData = road.filter(element => (
-                  element.name === '39'
-                ))
-                busStopSequence = roadData[0].busStopSequence.sequence
-                console.log(busStopSequence)
-                roadMapBus = roadData[0].roadMapBus.roadMap
-                console.log(roadMapBus)
-                centerPath = roadData[0].centerPath
-                console.log(centerPath)
-                firstBusStop = roadData[0].firstBusStop
-                console.log(firstBusStop)
-                currentCycleOnroad = roadData[0].currentCycleOnRoad
-                console.log(currentCycleOnroad)
-                busOnroadData= busOnroad.filter(element => (
-                  element.busRoad === '39'
-                ))
-              }
-              setTimeout(function () {
-                getBusOnRoad(roadMapBus, busFromUrl[i].busID, busFromUrl[i].speed, busStopSequence, busFromUrl[i].lat, busFromUrl[i].lon, busFromUrl[i].path, busFromUrl[i].time, busOnroadData, currentCycleOnroad, centerPath, firstBusStop).then(val => {
-                  console.log(val)
-                })
-              }, 150);
-            }
-          })
-        })
-    })
 
 
 
@@ -1204,28 +1158,28 @@ app.listen(port, () => {
   //create Road
   // var busStopSequence = []
   // var roadMapBus = []
-  // BusStopSequence.find({ busRoad: '97' }, function (err, data) {
+  // BusStopSequence.find({ busRoad: '63' }, function (err, data) {
   //   busStopSequence = data
   //   console.log(busStopSequence)
   // }).then(() => {
-  //   RoadMapBus.find({ busRoad: '97' }, function (err, data) {
+  //   RoadMapBus.find({ busRoad: '63' }, function (err, data) {
   //     roadMapBus = data
   //     console.log(roadMapBus)
   //   }).then(() => {
   //     var newRoad = Road({
-  //       name: '97',
-  //       fullname: '97 กระทรวงสาธารณสุข (นนทบุรี) - โรงพยาบาลสงฆ์',
+  //       name: '63',
+  //       fullname: '63 อู่นครอินทร์ - อนุสาวรีย์ชัยสมรภูมิ',
   //       currentCycleOnRoad: 0,
   //       busStopSequence: busStopSequence[0]._id,
   //       roadMapBus: roadMapBus[0]._id,
   //       centerPath: {
-  //         index: 348,
-  //         lat: 13.76093342274781,
-  //         lng: 100.528105428693,
+  //         index: 354,
+  //         lat: 13.7657305088901,
+  //         lng:  100.53802991187,
   //       },
   //       firstBusStop:{
-  //         lat:13.8473928273074,
-  //         lng: 100.514169007923,
+  //         lat:  13.8361605322906,
+  //         lng:  100.498551209858,
   //       }
   //     });
   //     newRoad.save(function (err) {
@@ -1444,91 +1398,125 @@ app.listen(port, () => {
       //   })
       // })
     })
-  // setInterval(() => {
-  //   // if (count + 5 < busFromFile.length) {
-  //   axios.get('http://analytics.dlt.transcodeglobal.com/test_businfo.txt')
-  //     .then(data => {
-  //       var busData = data.data
-  //       arr = Object.values(busData)
-  //       // var arr = [];
-  //       // var count = 0;
-  //       // for (count = 0; count < Object.keys(busData).length - 1; count++) {
-  //       //   var insertArr = Object.entries(busData)[count]
-  //       //   insertArr[1].busID = insertArr[0]
-  //       //   arr.push(insertArr[1])
-  //       // }
-  //       const result = arr.filter(element => (
-  //         element.path === "63"
-  //       ))
-  //       busFromUrl = result
-  //       console.log(busFromUrl)
-  //     }).then(() => {
-  //       Road
-  //         .find({})
-  //         .populate('busStopSequence')
-  //         .populate('roadMapBus')
-  //         .exec(function (err, data) {
-  //           busStopSequence = data.busStopSequence.sequence
-  //           roadMapBus = data.roadMapBus.roadMap
-  //           centerPath = data.centerPath
-  //           firstBusStop = data.firstBusStop
-  //           currentCycleOnroad = data.currentCycleOnRoad
-  //           BusOnroad.find({}, function (err, data) {
-  //             busOnroad = data
-  //           }).then(() => {
-  //             // for (let i = 0; i < busFromUrl.length; i++) {
-  //             //   setTimeout(function () {
-  //             //     getBusOnRoad(roadMapBus, busFromUrl[i].busID, busFromUrl[i].speed, busStopSequence, busFromUrl[i].lat, busFromUrl[i].lon, '63', busFromUrl[i].time, busOnroad, currentCycleOnroad, centerPath, firstBusStop).then(val => {
-  //             //       console.log(val)
-  //             //     })
-  //             //   }, 150);
-  //             // }
-  //           })
-  //         })
-  //     })
-  //   // }
-  //   // else {
-  //   //   console.log("endddddd")
-  //   // }
-  // }, 60000)
+  setInterval(() => {
+    axios.get('http://analytics.dlt.transcodeglobal.com/test_businfo.txt')
+      .then(data => {
+        var busData = data.data
+        var count = 0;
+        busFromUrl = Object.values(busData)
+        busFromUrl = busFromUrl.filter(element => (
+          element.path === "39" || element.path === "63" || element.path === "97"
+        ))
+        console.log(busFromUrl)
+      }).then(() => {
+        Road
+          .find({})
+          .populate('busStopSequence')
+          .populate('roadMapBus')
+          .exec(function (err, data) {
+            road = data
+            BusOnroad.find({}, function (err, data) {
+              busOnroad = data
+            }).then(() => {
+              for (let i = 0; i < busFromUrl.length; i++) {
+                setTimeout(function () {
+                  if (busFromUrl[i].path === '39') {
+                    roadData = road.filter(element => (
+                      element.name === '39'
+                    ))
+                    busStopSequence = roadData[0].busStopSequence.sequence
+                    roadMapBus = roadData[0].roadMapBus.roadMap
+                    centerPath = roadData[0].centerPath
+                    firstBusStop = roadData[0].firstBusStop
+                    currentCycleOnroad = roadData[0].currentCycleOnRoad
+                    busOnroadData = busOnroad.filter(element => (
+                      element.busRoad === '39'
+                    ))
+                  }
+                  else if (busFromUrl[i].path === '63') {
+                    roadData = road.filter(element => (
+                      element.name === '63'
+                    ))
+                    busStopSequence = roadData[0].busStopSequence.sequence
+                    roadMapBus = roadData[0].roadMapBus.roadMap
+                    centerPath = roadData[0].centerPath
+                    firstBusStop = roadData[0].firstBusStop
+                    currentCycleOnroad = roadData[0].currentCycleOnRoad
+                    busOnroadData = busOnroad.filter(element => (
+                      element.busRoad === '63'
+                    ))
+                  }
+                  else {
+                    roadData = road.filter(element => (
+                      element.name === '97'
+                    ))
+                    busStopSequence = roadData[0].busStopSequence.sequence
+                    roadMapBus = roadData[0].roadMapBus.roadMap
+                    centerPath = roadData[0].centerPath
+                    firstBusStop = roadData[0].firstBusStop
+                    currentCycleOnroad = roadData[0].currentCycleOnRoad
+                    busOnroadData = busOnroad.filter(element => (
+                      element.busRoad === '97'
+                    ))
+                  }
+                  getBusOnRoad(roadMapBus, busFromUrl[i].busID, busFromUrl[i].speed, busStopSequence, busFromUrl[i].lat, busFromUrl[i].lon, busFromUrl[i].path, busFromUrl[i].time, busOnroadData, currentCycleOnroad, centerPath, firstBusStop).then(val => {
+                    console.log(val)
+                  })
+                }, 200);
+              }
+            })
+          })
+      })
+ }, 60000)
 
-  // setInterval(() => {
-  //   var i = count
-  //   if (count + 5 < busFromFile.length) {
-  //     Road
-  //       .findOne({ name: '97' })
-  //       .populate('busStopSequence')
-  //       .populate('roadMapBus')
-  //       .exec(function (err, data) {
-  //         busStopSequence = data.busStopSequence.sequence
-  //         roadMapBus = data.roadMapBus.roadMap
-  //         centerPath = data.centerPath
-  //         firstBusStop = data.firstBusStop
-  //         currentCycleOnroad = data.currentCycleOnRoad
-  //         BusOnroad.find({ busRoad: '97' }, function (err, data) {
-  //           busOnroad = data
-  //         }).then(() => {
-  //           getBusOnRoad(roadMapBus, busFromFile[i].busID, busFromFile[i].speed, busStopSequence, busFromFile[i].lat, busFromFile[i].lng, '97', busFromFile[i].time, busOnroad, currentCycleOnroad, centerPath, firstBusStop).then(val => {
-  //             console.log(i)
-  //             console.log(val)
-  //             count = count+1
-  //           })
-  //         })
-  //       })
-  //   }
-  //   else {
-  //     console.log("endddddd")
-  //   }
-  // }, 1000)
+    // setInterval(() => {
+    //   var i = count
+    //   if (count + 5 < busFromFile.length) {
+    //     Road
+    //       .findOne({ name: '97' })
+    //       .populate('busStopSequence')
+    //       .populate('roadMapBus')
+    //       .exec(function (err, data) {
+    //         busStopSequence = data.busStopSequence.sequence
+    //         roadMapBus = data.roadMapBus.roadMap
+    //         centerPath = data.centerPath
+    //         firstBusStop = data.firstBusStop
+    //         currentCycleOnroad = data.currentCycleOnRoad
+    //         BusOnroad.find({ busRoad: '97' }, function (err, data) {
+    //           busOnroad = data
+    //         }).then(() => {
+    //           getBusOnRoad(roadMapBus, busFromFile[i].busID, busFromFile[i].speed, busStopSequence, busFromFile[i].lat, busFromFile[i].lng, '97', busFromFile[i].time, busOnroad, currentCycleOnroad, centerPath, firstBusStop).then(val => {
+    //             console.log(i)
+    //             console.log(val)
+    //             count = count+1
+    //           })
+    //         })
+    //       })
+    //   }
+    //   else {
+    //     console.log("endddddd")
+    //   }
+    // }, 1000)
 
 
-  // setInterval(() => {
-  //   var day = new Date();
-  //   console.log(day.getMinutes())
-  //   console.log(day.getHours()) 
-  //   if(day.getMinutes() === 43 && day.getHours() === 14)
-  //   console.log("it is workk")
-  // }, 60000)
+    setInterval(() => {
+      var day = new Date();
+      console.log(day.getMinutes())
+      console.log(day.getHours())
+      if (day.getMinutes() === 0 && day.getHours() === 3) {
+        var roadData = []
+        Road.find({}, function (err, data) {
+          if (err) throw err;
+          roadData = data
+        }).then(() => {
+          for (var i = 0; i < roadData.length; i++) {
+            Road.findOneAndUpdate({ name: roadData[i].name }, { currentCycleOnRoad: 0 }, function (err, checkdata) {
+              console.log('update success')
+            })
+          }
+        })
+      }
+    }, 60000)
 
 
-});
+  });
