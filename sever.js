@@ -681,6 +681,7 @@ findRoadPath = (busStop1, busStop2) => {
   let start = []
   let end = []
   let contract = []
+  let path = []
   let contract1 = []
   RoadBusStop.find({}, function (err, data) {
     roadBusStop = data
@@ -706,19 +707,48 @@ findRoadPath = (busStop1, busStop2) => {
       console.log(end)
 
       for (var j = 0; j < start.length; j++) {
-        end.forEach(endData => {
-          var endContact = contactPath.filter(element => (
-            element.busRoad === endData.path
-          ))
-          var result = endContact[0].contract.filter(element => (
-            element.contractWith === start[j].path
-          ))
-          if (result.length !== 0) {
-            contract.push({ start: start[j].path, end: endData })
-          }
-        })
+        var samePath = end.filter(element => (
+          element.path === start[j].path
+        ))
+        if (samePath.length !== 0) {
+          path.push(start[j].path)
+        }
       }
-      if (contract.length === 0) {
+
+      if (path.length !== 0) {
+        console.log(start[0].path)
+        var busStopPath = roadBusStop.filter(element => (
+          element.busRoad === start[0].path
+        ))
+        var pathStart = busStopPath[0].busStop.filter(element => (
+          element.nameTH === busStop1
+        ))
+        var pathEnd = busStopPath[0].busStop.filter(element => (
+          element.nameTH === busStop2
+        ))
+        var startSequence = pathStart[0].sequence
+        var endSequence = pathEnd[0].sequence
+        if (startSequence < endSequence) {
+          console.log("it is work shitttttttttt")
+        }
+        else {
+          console.log("Ho noooo")
+        }
+      }
+      else {
+        for (var j = 0; j < start.length; j++) {
+          end.forEach(endData => {
+            var endContact = contactPath.filter(element => (
+              element.busRoad === endData.path
+            ))
+            var result = endContact[0].contract.filter(element => (
+              element.contractWith === start[j].path
+            ))
+            if (result.length !== 0) {
+              contract.push({ start: start[j], end: endData })
+            }
+          })
+        }
         start.forEach(data => {
           var startContact = contactPath.filter(element => (
             element.busRoad === data.path
@@ -735,74 +765,110 @@ findRoadPath = (busStop1, busStop2) => {
             end.push({ pathEnd: endContact[0].busRoad, path: element.contractWith })
           })
         })
-      }
-      // console.log(start)
-      // console.log(end)
-      for (var j = 1; j < start.length; j++) {
-        end.forEach(endData => {
-          var endContact = contactPath.filter(element => (
-            element.busRoad === endData.path
-          ))
-          var result = endContact[0].contract.filter(element => (
-            element.contractWith === start[j].path
-          ))
-          if (result.length !== 0) {
-            contract.push({ start: start[j], end: endData })
+        console.log(start)
+        console.log(end)
+        for (var j = 1; j < start.length; j++) {
+          end.forEach(endData => {
+            var endContact = contactPath.filter(element => (
+              element.busRoad === endData.path
+            ))
+            var result = endContact[0].contract.filter(element => (
+              element.contractWith === start[j].path
+            ))
+            if (result.length !== 0) {
+              contract.push({ start: start[j], end: endData })
+            }
+          })
+        }
+        var answer = []
+        for (var i = 0; i < contract.length; i++) {
+          var roadPath = []
+          var roadPathStart = []
+          var roadPathEnd = []
+          var testStart = contract[i].start
+          if (testStart.pathStart === 0) {
+            roadPathStart.push(testStart.path)
+          }
+          else {
+            while (testStart.pathStart !== 0) {
+              roadPathStart.push(testStart.path)
+              roadPathStart.push(testStart.pathStart)
+              var result = start.filter(element => (
+                element.path === testStart.pathStart
+              ))
+              testStart = result[0]
+            }
+          }
+          var test = contract[i].end
+          if (test.pathEnd === 0) {
+            roadPathEnd.push(test.path)
+          }
+          else {
+            while (test.pathEnd !== 0) {
+              roadPathEnd.push(test.path)
+              roadPathEnd.push(test.pathEnd)
+              var result = end.filter(element => (
+                element.path === test.pathEnd
+              ))
+              test = result[0]
+            }
+          }
+          roadPathStart = roadPathStart.reverse()
+          roadPath = roadPathStart.concat(roadPathEnd)
+          answer.push({ roadPath: roadPath })
+        }
+        var minRoadPath = 0
+        answer.forEach((element, index) => {
+          if (index === 0) {
+            minRoadPath = element.roadPath.length
+          }
+          else {
+            if (element.roadPath.length < minRoadPath)
+              minRoadPath = element.roadPath.length
           }
         })
-      }
-      var answer = []
-      console.log(contract)
-      var test = contract[2].start
-      for (var i = 0; i < contract.length; i++) {
-        var roadPath = []
-        var roadPathStart = []
-        var roadPathEnd = []
-        var testStart = contract[i].start
-        if (testStart.pathStart === 0) {
-          roadPathStart.push(testStart.path)
-        }
-        else {
-          while (testStart.pathStart !== 0) {
-            roadPathStart.push(testStart.path)
-            roadPathStart.push(testStart.pathStart)
-            var result = start.filter(element => (
-              element.path === testStart.pathStart
-            ))
-            testStart = result[0]
+        console.log(minRoadPath)
+        answer = answer.filter(element => (element.roadPath.length === minRoadPath))
+        answer.forEach((answer, index) => {
+          var busStopPathStart = roadBusStop.filter(element => (
+            element.busRoad === answer.roadPath[0]
+          ))
+          var contractStart = contactPath.filter(element => (
+            element.busRoad === answer.roadPath[0]
+          ))
+          var resultStart = busStopPathStart[0].busStop.filter(element => (
+            element.nameTH === busStop1
+          ))
+          var startSequence = resultStart[0].sequence
+          var contractWithStart = contractStart[0].contract.filter(element => (
+            element.contractWith === answer.roadPath[1]
+          ))
+          var resultPathStart = contractWithStart[0].path.filter(element => (
+            element.sequence > startSequence
+          ))
+          var busStopPathEnd = roadBusStop.filter(element => (
+            element.busRoad === answer.roadPath[answer.roadPath.length - 1]
+          ))
+          var contractEnd = contactPath.filter(element => (
+            element.busRoad === answer.roadPath[answer.roadPath.length - 1]
+          ))
+          var resultEnd = busStopPathEnd[0].busStop.filter(element => (
+            element.nameTH === busStop2
+          ))
+          var endSequence = resultEnd[0].sequence
+          var contractWithEnd = contractEnd[0].contract.filter(element => (
+            element.contractWith === answer.roadPath[answer.roadPath.length - 2]
+          ))
+          var resultPathEnd = contractWithEnd[0].path.filter(element => (
+            element.sequence < endSequence
+          ))
+
+          if (resultPathStart.length !== 0 && resultPathEnd.length !== 0) {
+            console.log('it is workkk shittttt')
           }
-        }
-        var test = contract[i].end
-        if (test.pathEnd === 0) {
-          roadPathEnd.push(test.path)
-        }
-        else {
-          while (test.pathEnd !== 0) {
-            roadPathEnd.push(test.path)
-            roadPathEnd.push(test.pathEnd)
-            var result = end.filter(element => (
-              element.path === test.pathEnd
-            ))
-            test = result[0]
-          }
-        }
-        roadPathStart = roadPathStart.reverse()
-        roadPath = roadPathStart.concat(roadPathEnd)
-        answer.push({ roadPath: roadPath })
+        })
+        console.log(answer)
       }
-      var minRoadPath = 0
-      answer.forEach((element, index) => {
-        if (index === 0) {
-          minRoadPath = element.roadPath.length
-        }
-        else {
-          if (element.roadPath.length < minRoadPath)
-            minRoadPath = element.roadPath.length
-        }
-      })
-      console.log(minRoadPath)
-      answer = answer.filter(element => (element.roadPath.length === minRoadPath))
-      console.log(answer)
     })
   })
 }
@@ -823,84 +889,107 @@ roadPathWay = (startPlace, endPlace, roadPath) => {
         contactPath = data
       }).then(() => {
         var i = 0;
-        for (var i = 0; i < roadPath.length; i++) {
-          if (i === 0) {
-            var busStopPath = roadBusStop.filter(element => (
-              element.busRoad === roadPath[0]
-            ))
-            var contract = contactPath.filter(element => (
-              element.busRoad === roadPath[0]
-            ))
-            var result = busStopPath[0].busStop.filter(element => (
-              element.nameTH === startPlace
-            ))
-            var startSequence = result[0].sequence
-            //console.log(startSequence)
-            var contractWith = contract[0].contract.filter(element => (
-              element.contractWith === roadPath[1]
-            ))
-            var resultPath = contractWith[0].path.filter(element => (
-              element.sequence > startSequence
-            ))
-            var endSequence = resultPath[0].sequence
-            inItPath = resultPath[0].contractAt
-            //console.log(endSequence)
-            var roadMap = roadMapBus.filter(element => (
-              element.busRoad === roadPath[0]
-            ))
-            // console.log(busStopPath[0].busStop[startSequence])
-            // console.log(busStopPath[0].busStop[endSequence])
-            var path = roadMap[0].roadMap.filter(element => (
-              element.index >= busStopPath[0].busStop[startSequence].roadIndex &&
-              element.index <= busStopPath[0].busStop[endSequence].roadIndex
-            ))
-            //console.log(roadMap[0].roadMap)
-            console.log(path)
-          }
-          else if (i === roadPath.length - 1) {
-            var busStopPath = roadBusStop.filter(element => (
-              element.busRoad === roadPath[i]
-            ))
-            var result = busStopPath[0].busStop.filter(element => (
-              element.nameTH === endPlace
-            ))
-            var endSequence = result[0].sequence
-            var roadMap = roadMapBus.filter(element => (
-              element.busRoad === roadPath[i]
-            ))
-            var path = roadMap[0].roadMap.filter(element => (
-              element.index >= busStopPath[0].busStop[inItPath].roadIndex &&
-              element.index <= busStopPath[0].busStop[endSequence].roadIndex
-            ))
-            console.log("-------------------")
-            console.log(path)
-            console.log(inItPath)
-          }
-          else {
-            var busStopPath = roadBusStop.filter(element => (
-              element.busRoad === roadPath[i]
-            ))
-            var contract = contactPath.filter(element => (
-              element.busRoad === roadPath[i]
-            ))
-            var contractWith = contract[0].contract.filter(element => (
-              element.contractWith === roadPath[i + 1]
-            ))
-            var startSequence = inItPath
-            var resultPath = contractWith[0].path.filter(element => (
-              element.sequence > inItPath
-            ))
-            var endSequence = resultPath[0].sequence
-            inItPath = resultPath[0].contractAt
-            var roadMap = roadMapBus.filter(element => (
-              element.busRoad === roadPath[i]
-            ))
-            var path = roadMap[0].roadMap.filter(element => (
-              element.index >= busStopPath[0].busStop[startSequence].roadIndex &&
-              element.index <= busStopPath[0].busStop[endSequence].roadIndex
-            ))
-            console.log("xxxxxxxxxxxx")
-            console.log(path)
+        if (roadPath.length === 1) {
+          var busStopPath = roadBusStop.filter(element => (
+            element.busRoad === roadPath[0]
+          ))
+          var pathStart = busStopPath[0].busStop.filter(element => (
+            element.nameTH === startPlace
+          ))
+          var pathEnd = busStopPath[0].busStop.filter(element => (
+            element.nameTH === endPlace
+          ))
+          var startSequence = pathStart[0].sequence
+          var endSequence = pathEnd[0].sequence
+          var roadMap = roadMapBus.filter(element => (
+            element.busRoad === roadPath[0]
+          ))
+          var path = roadMap[0].roadMap.filter(element => (
+            element.index >= busStopPath[0].busStop[startSequence].roadIndex &&
+            element.index <= busStopPath[0].busStop[endSequence].roadIndex
+          ))
+          console.log(path)
+        }
+        else {
+          for (var i = 0; i < roadPath.length; i++) {
+            if (i === 0) {
+              var busStopPath = roadBusStop.filter(element => (
+                element.busRoad === roadPath[0]
+              ))
+              var contract = contactPath.filter(element => (
+                element.busRoad === roadPath[0]
+              ))
+              var result = busStopPath[0].busStop.filter(element => (
+                element.nameTH === startPlace
+              ))
+              var startSequence = result[0].sequence
+              //console.log(startSequence)
+              var contractWith = contract[0].contract.filter(element => (
+                element.contractWith === roadPath[1]
+              ))
+              var resultPath = contractWith[0].path.filter(element => (
+                element.sequence > startSequence
+              ))
+              var endSequence = resultPath[0].sequence
+              inItPath = resultPath[0].contractAt
+              //console.log(endSequence)
+              var roadMap = roadMapBus.filter(element => (
+                element.busRoad === roadPath[0]
+              ))
+              // console.log(busStopPath[0].busStop[startSequence])
+              // console.log(busStopPath[0].busStop[endSequence])
+              var path = roadMap[0].roadMap.filter(element => (
+                element.index >= busStopPath[0].busStop[startSequence].roadIndex &&
+                element.index <= busStopPath[0].busStop[endSequence].roadIndex
+              ))
+              //console.log(roadMap[0].roadMap)
+              console.log(path)
+            }
+            else if (i === roadPath.length - 1) {
+              var busStopPath = roadBusStop.filter(element => (
+                element.busRoad === roadPath[i]
+              ))
+              var result = busStopPath[0].busStop.filter(element => (
+                element.nameTH === endPlace
+              ))
+              var endSequence = result[0].sequence
+              var roadMap = roadMapBus.filter(element => (
+                element.busRoad === roadPath[i]
+              ))
+              var path = roadMap[0].roadMap.filter(element => (
+                element.index >= busStopPath[0].busStop[inItPath].roadIndex &&
+                element.index <= busStopPath[0].busStop[endSequence].roadIndex
+              ))
+              console.log("-------------------")
+              console.log(path)
+              console.log(inItPath)
+            }
+            else {
+              var busStopPath = roadBusStop.filter(element => (
+                element.busRoad === roadPath[i]
+              ))
+              var contract = contactPath.filter(element => (
+                element.busRoad === roadPath[i]
+              ))
+              var contractWith = contract[0].contract.filter(element => (
+                element.contractWith === roadPath[i + 1]
+              ))
+              var startSequence = inItPath
+              var resultPath = contractWith[0].path.filter(element => (
+                element.sequence > inItPath
+              ))
+              var endSequence = resultPath[0].sequence
+              inItPath = resultPath[0].contractAt
+              var roadMap = roadMapBus.filter(element => (
+                element.busRoad === roadPath[i]
+              ))
+              var path = roadMap[0].roadMap.filter(element => (
+                element.index >= busStopPath[0].busStop[startSequence].roadIndex &&
+                element.index <= busStopPath[0].busStop[endSequence].roadIndex
+              ))
+              console.log("xxxxxxxxxxxx")
+              console.log(path)
+            }
           }
         }
       })
@@ -962,7 +1051,7 @@ app.listen(port, () => {
   //     ))
   //     console.log(result)
   //   })
-  //findRoadPath("โรงเรียนหอวัง", "โรงแรมมิโดโฮเต็ล")
+  findRoadPath("อาคารผู้โดยสาร 1 ขาออก (ชั้น3)", "สำนักงานใหญ่ธนาคารทหารไทย")//โรงแรมมิโดโฮเต็ล
   //roadPathWay("โรงเรียนหอวัง", "ซอยพหลโยธิน 8,ซอยสายลม", ['A1', '39','97'])
 
   // var busStop = []
@@ -1398,125 +1487,125 @@ app.listen(port, () => {
       //   })
       // })
     })
+  //   setInterval(() => {
+  //     axios.get('http://analytics.dlt.transcodeglobal.com/test_businfo.txt')
+  //       .then(data => {
+  //         var busData = data.data
+  //         var count = 0;
+  //         busFromUrl = Object.values(busData)
+  //         busFromUrl = busFromUrl.filter(element => (
+  //           element.path === "39" || element.path === "63" || element.path === "97"
+  //         ))
+  //         console.log(busFromUrl)
+  //       }).then(() => {
+  //         Road
+  //           .find({})
+  //           .populate('busStopSequence')
+  //           .populate('roadMapBus')
+  //           .exec(function (err, data) {
+  //             road = data
+  //             BusOnroad.find({}, function (err, data) {
+  //               busOnroad = data
+  //             }).then(() => {
+  //               for (let i = 0; i < busFromUrl.length; i++) {
+  //                 setTimeout(function () {
+  //                   if (busFromUrl[i].path === '39') {
+  //                     roadData = road.filter(element => (
+  //                       element.name === '39'
+  //                     ))
+  //                     busStopSequence = roadData[0].busStopSequence.sequence
+  //                     roadMapBus = roadData[0].roadMapBus.roadMap
+  //                     centerPath = roadData[0].centerPath
+  //                     firstBusStop = roadData[0].firstBusStop
+  //                     currentCycleOnroad = roadData[0].currentCycleOnRoad
+  //                     busOnroadData = busOnroad.filter(element => (
+  //                       element.busRoad === '39'
+  //                     ))
+  //                   }
+  //                   else if (busFromUrl[i].path === '63') {
+  //                     roadData = road.filter(element => (
+  //                       element.name === '63'
+  //                     ))
+  //                     busStopSequence = roadData[0].busStopSequence.sequence
+  //                     roadMapBus = roadData[0].roadMapBus.roadMap
+  //                     centerPath = roadData[0].centerPath
+  //                     firstBusStop = roadData[0].firstBusStop
+  //                     currentCycleOnroad = roadData[0].currentCycleOnRoad
+  //                     busOnroadData = busOnroad.filter(element => (
+  //                       element.busRoad === '63'
+  //                     ))
+  //                   }
+  //                   else {
+  //                     roadData = road.filter(element => (
+  //                       element.name === '97'
+  //                     ))
+  //                     busStopSequence = roadData[0].busStopSequence.sequence
+  //                     roadMapBus = roadData[0].roadMapBus.roadMap
+  //                     centerPath = roadData[0].centerPath
+  //                     firstBusStop = roadData[0].firstBusStop
+  //                     currentCycleOnroad = roadData[0].currentCycleOnRoad
+  //                     busOnroadData = busOnroad.filter(element => (
+  //                       element.busRoad === '97'
+  //                     ))
+  //                   }
+  //                   getBusOnRoad(roadMapBus, busFromUrl[i].busID, busFromUrl[i].speed, busStopSequence, busFromUrl[i].lat, busFromUrl[i].lon, busFromUrl[i].path, busFromUrl[i].time, busOnroadData, currentCycleOnroad, centerPath, firstBusStop).then(val => {
+  //                     console.log(val)
+  //                   })
+  //                 }, 200);
+  //               }
+  //             })
+  //           })
+  //       })
+  //  }, 60000)
+
+  // setInterval(() => {
+  //   var i = count
+  //   if (count + 5 < busFromFile.length) {
+  //     Road
+  //       .findOne({ name: '97' })
+  //       .populate('busStopSequence')
+  //       .populate('roadMapBus')
+  //       .exec(function (err, data) {
+  //         busStopSequence = data.busStopSequence.sequence
+  //         roadMapBus = data.roadMapBus.roadMap
+  //         centerPath = data.centerPath
+  //         firstBusStop = data.firstBusStop
+  //         currentCycleOnroad = data.currentCycleOnRoad
+  //         BusOnroad.find({ busRoad: '97' }, function (err, data) {
+  //           busOnroad = data
+  //         }).then(() => {
+  //           getBusOnRoad(roadMapBus, busFromFile[i].busID, busFromFile[i].speed, busStopSequence, busFromFile[i].lat, busFromFile[i].lng, '97', busFromFile[i].time, busOnroad, currentCycleOnroad, centerPath, firstBusStop).then(val => {
+  //             console.log(i)
+  //             console.log(val)
+  //             count = count+1
+  //           })
+  //         })
+  //       })
+  //   }
+  //   else {
+  //     console.log("endddddd")
+  //   }
+  // }, 1000)
+
+
   setInterval(() => {
-    axios.get('http://analytics.dlt.transcodeglobal.com/test_businfo.txt')
-      .then(data => {
-        var busData = data.data
-        var count = 0;
-        busFromUrl = Object.values(busData)
-        busFromUrl = busFromUrl.filter(element => (
-          element.path === "39" || element.path === "63" || element.path === "97"
-        ))
-        console.log(busFromUrl)
+    var day = new Date();
+    console.log(day.getMinutes())
+    console.log(day.getHours())
+    if (day.getMinutes() === 0 && day.getHours() === 3) {
+      var roadData = []
+      Road.find({}, function (err, data) {
+        if (err) throw err;
+        roadData = data
       }).then(() => {
-        Road
-          .find({})
-          .populate('busStopSequence')
-          .populate('roadMapBus')
-          .exec(function (err, data) {
-            road = data
-            BusOnroad.find({}, function (err, data) {
-              busOnroad = data
-            }).then(() => {
-              for (let i = 0; i < busFromUrl.length; i++) {
-                setTimeout(function () {
-                  if (busFromUrl[i].path === '39') {
-                    roadData = road.filter(element => (
-                      element.name === '39'
-                    ))
-                    busStopSequence = roadData[0].busStopSequence.sequence
-                    roadMapBus = roadData[0].roadMapBus.roadMap
-                    centerPath = roadData[0].centerPath
-                    firstBusStop = roadData[0].firstBusStop
-                    currentCycleOnroad = roadData[0].currentCycleOnRoad
-                    busOnroadData = busOnroad.filter(element => (
-                      element.busRoad === '39'
-                    ))
-                  }
-                  else if (busFromUrl[i].path === '63') {
-                    roadData = road.filter(element => (
-                      element.name === '63'
-                    ))
-                    busStopSequence = roadData[0].busStopSequence.sequence
-                    roadMapBus = roadData[0].roadMapBus.roadMap
-                    centerPath = roadData[0].centerPath
-                    firstBusStop = roadData[0].firstBusStop
-                    currentCycleOnroad = roadData[0].currentCycleOnRoad
-                    busOnroadData = busOnroad.filter(element => (
-                      element.busRoad === '63'
-                    ))
-                  }
-                  else {
-                    roadData = road.filter(element => (
-                      element.name === '97'
-                    ))
-                    busStopSequence = roadData[0].busStopSequence.sequence
-                    roadMapBus = roadData[0].roadMapBus.roadMap
-                    centerPath = roadData[0].centerPath
-                    firstBusStop = roadData[0].firstBusStop
-                    currentCycleOnroad = roadData[0].currentCycleOnRoad
-                    busOnroadData = busOnroad.filter(element => (
-                      element.busRoad === '97'
-                    ))
-                  }
-                  getBusOnRoad(roadMapBus, busFromUrl[i].busID, busFromUrl[i].speed, busStopSequence, busFromUrl[i].lat, busFromUrl[i].lon, busFromUrl[i].path, busFromUrl[i].time, busOnroadData, currentCycleOnroad, centerPath, firstBusStop).then(val => {
-                    console.log(val)
-                  })
-                }, 200);
-              }
-            })
+        for (var i = 0; i < roadData.length; i++) {
+          Road.findOneAndUpdate({ name: roadData[i].name }, { currentCycleOnRoad: 0 }, function (err, checkdata) {
+            console.log('update success')
           })
+        }
       })
- }, 60000)
-
-    // setInterval(() => {
-    //   var i = count
-    //   if (count + 5 < busFromFile.length) {
-    //     Road
-    //       .findOne({ name: '97' })
-    //       .populate('busStopSequence')
-    //       .populate('roadMapBus')
-    //       .exec(function (err, data) {
-    //         busStopSequence = data.busStopSequence.sequence
-    //         roadMapBus = data.roadMapBus.roadMap
-    //         centerPath = data.centerPath
-    //         firstBusStop = data.firstBusStop
-    //         currentCycleOnroad = data.currentCycleOnRoad
-    //         BusOnroad.find({ busRoad: '97' }, function (err, data) {
-    //           busOnroad = data
-    //         }).then(() => {
-    //           getBusOnRoad(roadMapBus, busFromFile[i].busID, busFromFile[i].speed, busStopSequence, busFromFile[i].lat, busFromFile[i].lng, '97', busFromFile[i].time, busOnroad, currentCycleOnroad, centerPath, firstBusStop).then(val => {
-    //             console.log(i)
-    //             console.log(val)
-    //             count = count+1
-    //           })
-    //         })
-    //       })
-    //   }
-    //   else {
-    //     console.log("endddddd")
-    //   }
-    // }, 1000)
+    }
+  }, 60000)
 
 
-    setInterval(() => {
-      var day = new Date();
-      console.log(day.getMinutes())
-      console.log(day.getHours())
-      if (day.getMinutes() === 0 && day.getHours() === 3) {
-        var roadData = []
-        Road.find({}, function (err, data) {
-          if (err) throw err;
-          roadData = data
-        }).then(() => {
-          for (var i = 0; i < roadData.length; i++) {
-            Road.findOneAndUpdate({ name: roadData[i].name }, { currentCycleOnRoad: 0 }, function (err, checkdata) {
-              console.log('update success')
-            })
-          }
-        })
-      }
-    }, 60000)
-
-
-  });
+});
