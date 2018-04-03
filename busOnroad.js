@@ -15,6 +15,12 @@ var busOnroadSchema = new Schema({
     gulityState1: false,
     gulityState2: false,
     gulityState3: false,
+    busLock: [{
+        lat: {type : Float},
+        lng: {type : Float}
+    }],
+    timeStamp: String,
+    canCompute: Boolean,
 });
 
 var BusOnroad = mongoose.model('BusOnroad', busOnroadSchema);
