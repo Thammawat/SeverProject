@@ -159,31 +159,71 @@ async function checkBusData(roadMapBus, busID, speed, busStopSequence, busLat, b
         element.busID === busID && element.busRoad === road
       ))
       if (parseInt(result.length) !== parseInt(0)) {
-        var previousTime = moment(new Date(result[0].timeStamp))
-        previousTime.add(7, 'minutes')
-        var presentTime = moment(new Date(timeStamp))
-        if (presentTime > previousTime)
-          result[0].canCompute = false
-        else
-          result[0].canCompute = true
-        resolve({
-          busRoad: road,
-          busID: busID,
-          speed: busdata.speed,
-          lat: result[0].lat,
-          lng: result[0].lng,
-          cycleOnRoad: result[0].cycleOnRoad,
-          currentOnRoad: result[0].currentOnRoad,
-          currentBusStop: result[0].currentBusStop,
-          gulityState1: result[0].gulityState1,
-          gulityState2: result[0].gulityState2,
-          gulityState3: result[0].gulityState3,
-          passCenter: result[0].passCenter,
-          busLock: result[0].busLock,
-          newBus: false,
-          timeStamp: result[0].timeStamp,
-          canCompute: result[0].canCompute,
-        })
+        if (result[0].canCompute) {
+          var previousTime = moment(new Date(result[0].timeStamp))
+          previousTime.add(10, 'minutes')
+          var presentTime = moment(new Date(timeStamp))
+          if (presentTime > previousTime) {
+            resolve({
+              busRoad: road,
+              busID: busID,
+              speed: busdata.speed,
+              lat: result[0].lat,
+              lng: result[0].lng,
+              cycleOnRoad: result[0].cycleOnRoad,
+              currentOnRoad: result[0].currentOnRoad,
+              currentBusStop: result[0].currentBusStop,
+              gulityState1: result[0].gulityState1,
+              gulityState2: result[0].gulityState2,
+              gulityState3: result[0].gulityState3,
+              passCenter: result[0].passCenter,
+              busLock: result[0].busLock,
+              newBus: false,
+              timeStamp: timeStamp,
+              canCompute: false,
+            })
+          }
+          else {
+            resolve({
+              busRoad: road,
+              busID: busID,
+              speed: busdata.speed,
+              lat: result[0].lat,
+              lng: result[0].lng,
+              cycleOnRoad: result[0].cycleOnRoad,
+              currentOnRoad: result[0].currentOnRoad,
+              currentBusStop: result[0].currentBusStop,
+              gulityState1: result[0].gulityState1,
+              gulityState2: result[0].gulityState2,
+              gulityState3: result[0].gulityState3,
+              passCenter: result[0].passCenter,
+              busLock: result[0].busLock,
+              newBus: false,
+              timeStamp: timeStamp,
+              canCompute: true,
+            })
+          }
+        }
+        else{
+          resolve({
+            busRoad: road,
+            busID: busID,
+            speed: busdata.speed,
+            lat: result[0].lat,
+            lng: result[0].lng,
+            cycleOnRoad: result[0].cycleOnRoad,
+            currentOnRoad: result[0].currentOnRoad,
+            currentBusStop: result[0].currentBusStop,
+            gulityState1: result[0].gulityState1,
+            gulityState2: result[0].gulityState2,
+            gulityState3: result[0].gulityState3,
+            passCenter: result[0].passCenter,
+            busLock: result[0].busLock,
+            newBus: false,
+            timeStamp: timeStamp,
+            canCompute: result[0].canCompute,
+          })
+        }
       }
       else {
         resolve({
@@ -555,7 +595,7 @@ async function updateBusOnroad(busData, busStopSequence, busroad, roadMapBus, fi
       else {
         busData.busLock.push({ lat: busData.lat, lng: busData.lng })
         if (busData.busLock.length > 30) {
-          busData.busLock = busData.busLock.splice(0, 20)
+          busData.busLock = busData.busLock.slice(20)
         }
         BusOnroad.findOneAndUpdate({ busRoad: busData.busRoad, busID: busData.busID },
           {
@@ -1632,76 +1672,76 @@ app.listen(port, () => {
       //   })
       // })
     })
-    setInterval(() => {
-       axios.get('http://analytics.dlt.transcodeglobal.com/test_businfo.txt')
-         .then(data => {
-           var busData = data.data
-           var count = 0;
-           busFromUrl = Object.values(busData)
-           busFromUrl = busFromUrl.filter(element => (
-             element.path === "39" || element.path === "63" || element.path === "97"
-          ))
-          console.log(busFromUrl)
-        }).then(() => {
-          Road
-            .find({})
-            .populate('busStopSequence')
-            .populate('roadMapBus')
-            .exec(function (err, data) {
-              road = data
-              BusOnroad.find({}, function (err, data) {
-                busOnroad = data
-              }).then(() => {
-                for (let i = 0; i < busFromUrl.length; i++) {
-                  setTimeout(function () {
-                    if (busFromUrl[i].path === '39') {
-                      roadData = road.filter(element => (
-                        element.name === '39'
-                      ))
-                      busStopSequence = roadData[0].busStopSequence.sequence
-                      roadMapBus = roadData[0].roadMapBus.roadMap
-                      centerPath = roadData[0].centerPath
-                      firstBusStop = roadData[0].firstBusStop
-                      currentCycleOnroad = roadData[0].currentCycleOnRoad
-                      busOnroadData = busOnroad.filter(element => (
-                        element.busRoad === '39'
-                      ))
-                    }
-                    else if (busFromUrl[i].path === '63') {
-                      roadData = road.filter(element => (
-                        element.name === '63'
-                      ))
-                      busStopSequence = roadData[0].busStopSequence.sequence
-                      roadMapBus = roadData[0].roadMapBus.roadMap
-                      centerPath = roadData[0].centerPath
-                      firstBusStop = roadData[0].firstBusStop
-                      currentCycleOnroad = roadData[0].currentCycleOnRoad
-                      busOnroadData = busOnroad.filter(element => (
-                        element.busRoad === '63'
-                      ))
-                    }
-                    else {
-                      roadData = road.filter(element => (
-                        element.name === '97'
-                      ))
-                      busStopSequence = roadData[0].busStopSequence.sequence
-                      roadMapBus = roadData[0].roadMapBus.roadMap
-                      centerPath = roadData[0].centerPath
-                      firstBusStop = roadData[0].firstBusStop
-                      currentCycleOnroad = roadData[0].currentCycleOnRoad
-                      busOnroadData = busOnroad.filter(element => (
-                        element.busRoad === '97'
-                      ))
-                    }
-                    getBusOnRoad(roadMapBus, busFromUrl[i].busID, busFromUrl[i].speed, busStopSequence, busFromUrl[i].lat, busFromUrl[i].lon, busFromUrl[i].path, busFromUrl[i].time, busOnroadData, currentCycleOnroad, centerPath, firstBusStop).then(val => {
-                      console.log(val)
-                    })
-                  }, 200);
-                }
-              })
+  setInterval(() => {
+    axios.get('http://analytics.dlt.transcodeglobal.com/test_businfo.txt')
+      .then(data => {
+        var busData = data.data
+        var count = 0;
+        busFromUrl = Object.values(busData)
+        busFromUrl = busFromUrl.filter(element => (
+          element.path === "39" || element.path === "63" || element.path === "97"
+        ))
+        console.log(busFromUrl)
+      }).then(() => {
+        Road
+          .find({})
+          .populate('busStopSequence')
+          .populate('roadMapBus')
+          .exec(function (err, data) {
+            road = data
+            BusOnroad.find({}, function (err, data) {
+              busOnroad = data
+            }).then(() => {
+              for (let i = 0; i < busFromUrl.length; i++) {
+                setTimeout(function () {
+                  if (busFromUrl[i].path === '39') {
+                    roadData = road.filter(element => (
+                      element.name === '39'
+                    ))
+                    busStopSequence = roadData[0].busStopSequence.sequence
+                    roadMapBus = roadData[0].roadMapBus.roadMap
+                    centerPath = roadData[0].centerPath
+                    firstBusStop = roadData[0].firstBusStop
+                    currentCycleOnroad = roadData[0].currentCycleOnRoad
+                    busOnroadData = busOnroad.filter(element => (
+                      element.busRoad === '39'
+                    ))
+                  }
+                  else if (busFromUrl[i].path === '63') {
+                    roadData = road.filter(element => (
+                      element.name === '63'
+                    ))
+                    busStopSequence = roadData[0].busStopSequence.sequence
+                    roadMapBus = roadData[0].roadMapBus.roadMap
+                    centerPath = roadData[0].centerPath
+                    firstBusStop = roadData[0].firstBusStop
+                    currentCycleOnroad = roadData[0].currentCycleOnRoad
+                    busOnroadData = busOnroad.filter(element => (
+                      element.busRoad === '63'
+                    ))
+                  }
+                  else {
+                    roadData = road.filter(element => (
+                      element.name === '97'
+                    ))
+                    busStopSequence = roadData[0].busStopSequence.sequence
+                    roadMapBus = roadData[0].roadMapBus.roadMap
+                    centerPath = roadData[0].centerPath
+                    firstBusStop = roadData[0].firstBusStop
+                    currentCycleOnroad = roadData[0].currentCycleOnRoad
+                    busOnroadData = busOnroad.filter(element => (
+                      element.busRoad === '97'
+                    ))
+                  }
+                  getBusOnRoad(roadMapBus, busFromUrl[i].busID, busFromUrl[i].speed, busStopSequence, busFromUrl[i].lat, busFromUrl[i].lon, busFromUrl[i].path, busFromUrl[i].time, busOnroadData, currentCycleOnroad, centerPath, firstBusStop).then(val => {
+                    console.log(val)
+                  })
+                }, 200);
+              }
             })
-        })
-   }, 60000)
+          })
+      })
+  }, 60000)
 
   // setInterval(() => {
   //   var i = count
