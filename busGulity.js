@@ -16,7 +16,7 @@ var busGulitySchema = new Schema({
         lat: {type : Float},
         lng: {type : Float}
     }],
-    overDriveOtherBus:{ busID:{ type : String, default:'null'},lat:{type: Float, default:0},lng:{type: Float, default:0} }
+    overDriveOtherBus:{ busID:{ type : String, default:'null'},lat:{type: Float, default:0},lng:{type: Float, default:0},cycleOnRoad:{type: Number ,default: 0} }
 });
 
 var BusGulity = mongoose.model('BusGulity', busGulitySchema);

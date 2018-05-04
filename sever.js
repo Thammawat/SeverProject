@@ -513,7 +513,7 @@ async function checkBusOverRide(busData, timeStamp, busOnroad) {
             lng: busData.lng,
             busLock: busData.busLock,
             state: 1,
-            overDriveOtherBus: { busID: result[0].busID, lat: result[0].lat, lng: result[0].lng }
+            overDriveOtherBus: { busID: result[0].busID, lat: result[0].lat, lng: result[0].lng,cycleOnRoad: result[0].cycleOnRoad }
           })
           newBusGulity.save(function (err) {
             resolve(true)
@@ -530,7 +530,7 @@ async function checkBusOverRide(busData, timeStamp, busOnroad) {
 
 
 //step5
-async function updateBusOnroad(busData, busStopSequence, busroad, roadMapBus, firstBusStop) {
+async function updateBusOnroad(busData, busStopSequence, busroad, roadMapBus, firstBusStop,busLat,busLng) {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const checkBaseFirstBusStop = geodist({ lat: busData.lat, lon: busData.lng }, { lat: firstBusStop.lat, lon: firstBusStop.lng }, { exact: true, unit: 'km' })
@@ -593,7 +593,7 @@ async function updateBusOnroad(busData, busStopSequence, busroad, roadMapBus, fi
         });
       }
       else {
-        busData.busLock.push({ lat: busData.lat, lng: busData.lng })
+        busData.busLock.push({ lat: busLat, lng: busLng })
         if (busData.busLock.length > 30) {
           busData.busLock = busData.busLock.slice(20)
         }
@@ -634,13 +634,13 @@ async function getBusOnRoad(roadMapBus, busID, speed, busStopSequence, busLat, b
     data = await assigncheckBusCompleteCycle(data, checkBusCompleteCycleData)
     let checkBusOverRideData = await checkBusOverRide(data, timeStamp, busOnroad)
     data = await assigncheckBusOverRide(data, checkBusOverRideData)
-    data = await updateBusOnroad(data, busStopSequence, road, roadMapBus, firstBusStop)
+    data = await updateBusOnroad(data, busStopSequence, road, roadMapBus, firstBusStop,busLat,busLng)
     return data;
   }
   else {
     let checkOutOfRoadData = await checkBusOutofRoad(road, data, roadMapBus, busLat, busLng, timeStamp, centerPath)
     data = await assignData(data, checkOutOfRoadData)
-    data = await updateBusOnroad(data, busStopSequence, road, roadMapBus, firstBusStop)
+    data = await updateBusOnroad(data, busStopSequence, road, roadMapBus, firstBusStop,busLat,busLng)
     return data;
   }
 }
